@@ -30,9 +30,11 @@ exports.getInstructor = async (req, res) => {
 };
 
 exports.add = async (req, res) => {
+  const fs = require('fs');
+  const path = require('path');
+  const instructorJsonPath = path.join(__dirname, '../data/Instructor.json');
   try {
     const {
-      instructorId,
       firstname,
       lastname,
       email,
@@ -41,10 +43,40 @@ exports.add = async (req, res) => {
       preferredContact
     } = req.body;
 
-    // Basic validation
-    if (!firstname || !lastname || !email || !phone) {
-      return res.status(400).json({ message: "Missing required fields" });
+    // Validate required fields
+    if (!firstname || !lastname || !email || !phone || !address || !preferredContact) {
+      return res.status(400).json({ message: "All fields are required." });
     }
+
+    // Check for duplicate name
+    const duplicate = await Instructor.findOne({ firstname, lastname });
+    if (duplicate) {
+      // Allow duplicates but warn frontend
+      return res.status(409).json({ message: "Duplicate name found. Confirm to proceed.", duplicate: true });
+    }
+
+    // Generate new instructorId (Ixxxxx)
+    let maxId = 0;
+    const dbInstructors = await Instructor.find({});
+    dbInstructors.forEach(inst => {
+      if (inst.instructorId && /^I\d+$/.test(inst.instructorId)) {
+        const num = parseInt(inst.instructorId.slice(1));
+        if (num > maxId) maxId = num;
+      }
+    });
+    // Also check JSON file
+    if (fs.existsSync(instructorJsonPath)) {
+      try {
+        const jsonData = JSON.parse(fs.readFileSync(instructorJsonPath, 'utf8'));
+        jsonData.forEach(inst => {
+          if (inst.instructorId && /^I\d+$/.test(inst.instructorId)) {
+            const num = parseInt(inst.instructorId.slice(1));
+            if (num > maxId) maxId = num;
+          }
+        });
+      } catch (e) {}
+    }
+    const instructorId = 'I' + String(maxId + 1).padStart(5, '0');
 
     // Create a new instructor document
     const newInstructor = new Instructor({
@@ -59,7 +91,28 @@ exports.add = async (req, res) => {
 
     // Save to database
     await newInstructor.save();
-    res.status(201).json({ message: "Instructor added successfully", instructor: newInstructor });
+
+    // Save to Instructor.json
+    let jsonData = [];
+    if (fs.existsSync(instructorJsonPath)) {
+      try {
+        jsonData = JSON.parse(fs.readFileSync(instructorJsonPath, 'utf8'));
+      } catch (e) {}
+    }
+    jsonData.push({
+      instructorId,
+      firstname,
+      lastname,
+      address,
+      phone,
+      email,
+      preferredContact
+    });
+    fs.writeFileSync(instructorJsonPath, JSON.stringify(jsonData, null, 2));
+
+    // Simulate sending confirmation message
+    console.log(`Welcome to Yoga'Hom! ... Your instructor id is ${instructorId}.`);
+    res.status(201).json({ message: "Instructor added successfully", instructorId });
   } catch (err) {
     console.error("Error adding instructor:", err.message);
     res.status(500).json({ message: "Failed to add instructor", error: err.message });

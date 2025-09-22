@@ -1,0 +1,29 @@
+@startuml
+class Instructor {
+  - instructorId : String
+  - firstName : String
+  - lastName : String
+  - address : String
+  - phone : String
+  - email : String
+  - preferredContact : String
+}
+
+class InstructorController {
+  + addInstructor(data)
+  + checkDuplicateName(firstName, lastName)
+  + generateInstructorId()
+  + validateData(data)
+  + saveToMongoDB(data)
+  + saveToJsonFile(data)
+  + sendConfirmation(instructor)
+}
+
+class InstructorModel
+
+class InstructorJsonFile
+
+InstructorController --> InstructorModel : uses
+InstructorController --> InstructorJsonFile : uses
+InstructorController --> Instructor : creates
+@enduml

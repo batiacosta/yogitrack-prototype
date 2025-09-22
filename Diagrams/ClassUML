@@ -1,0 +1,29 @@
+@startuml
+class Class {
+  - classId : String
+  - instructorId : String
+  - day : String
+  - time : String
+  - classType : String
+  - payRate : Number
+}
+
+class ClassController {
+  + addClass(data)
+  + checkScheduleConflict(day, time)
+  + suggestAlternatives(day, time)
+  + generateClassId()
+  + validateData(data)
+  + saveToMongoDB(data)
+  + saveToJsonFile(data)
+  + sendConfirmation(class)
+}
+
+class ClassModel
+
+class ClassJsonFile
+
+ClassController --> ClassModel : uses
+ClassController --> ClassJsonFile : uses
+ClassController --> Class : creates
+@enduml

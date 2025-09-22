@@ -1,0 +1,24 @@
+@startuml
+actor Manager
+participant "Frontend UI" as UI
+participant "InstructorController" as Controller
+participant "MongoDB"
+participant "Instructor.json"
+
+Manager -> UI : Click "Add New Instructor"
+UI -> Controller : POST /api/instructor/add (instructor data)
+Controller -> MongoDB : Check for duplicate name
+MongoDB --> Controller : Duplicate? (yes/no)
+alt Duplicate found
+    Controller -> UI : Prompt for confirmation
+    UI -> Manager : Show duplicate warning
+    Manager -> UI : Confirm to proceed
+end
+Controller -> Controller : Generate instructorId
+Controller -> Controller : Validate data
+Controller -> MongoDB : Save instructor
+Controller -> Instructor.json : Save instructor
+Controller -> Controller : Send confirmation message
+Controller -> UI : Respond with success
+UI -> Manager : Show confirmation
+@enduml

@@ -6,10 +6,26 @@
     "classType": "General",
     "description": "A beginners class for pranayama",
     "daytime": [
-      {"day": "Mon", "time": "09:00:00", "duration": 45},
-      {"day":"Wed", "time":"09:00:00", "duration": 45},
-      {"day":"Fri", "time":"09:00:00", "duration": 45},
-      {"day":"Sun", "time":"11:00:00", "duration": 45}
+      {
+        "day": "Mon",
+        "time": "09:00:00",
+        "duration": 45
+      },
+      {
+        "day": "Wed",
+        "time": "09:00:00",
+        "duration": 45
+      },
+      {
+        "day": "Fri",
+        "time": "09:00:00",
+        "duration": 45
+      },
+      {
+        "day": "Sun",
+        "time": "11:00:00",
+        "duration": 45
+      }
     ]
   },
   {
@@ -19,8 +35,30 @@
     "classType": "Special",
     "description": "Advanced class for building strength",
     "daytime": [
-      {"day": "Tue", "time":"16:00:00", "duration": 60},
-      {"day": "Thu", "time":"16:00:00", "duration": 60}
+      {
+        "day": "Tue",
+        "time": "16:00:00",
+        "duration": 60
+      },
+      {
+        "day": "Thu",
+        "time": "16:00:00",
+        "duration": 60
+      }
+    ]
+  },
+  {
+    "classId": "C00001",
+    "className": "Salsa Yoga",
+    "instructorId": "I00003",
+    "classType": "General",
+    "description": "Yoga for salsa lovers",
+    "daytime": [
+      {
+        "day": "Mon",
+        "time": "16:30",
+        "duration": 90
+      }
     ]
   }
 ]

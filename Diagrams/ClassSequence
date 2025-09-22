@@ -1,0 +1,26 @@
+@startuml
+actor Manager
+participant "Frontend UI" as UI
+participant "ClassController" as Controller
+participant "MongoDB"
+participant "Class.json"
+
+Manager -> UI : Click "Add New Class"
+UI -> Controller : POST /api/class/add (class data)
+Controller -> MongoDB : Check for schedule conflict
+MongoDB --> Controller : Conflict? (yes/no)
+alt Conflict found
+    Controller -> Controller : Suggest alternatives
+    Controller -> UI : Return alternatives
+    UI -> Manager : Show alternatives
+    Manager -> UI : Select alternative
+    UI -> Controller : Submit selected option
+end
+Controller -> Controller : Generate classId
+Controller -> Controller : Validate data
+Controller -> MongoDB : Save class
+Controller -> Class.json : Save class
+Controller -> Controller : Send confirmation message
+Controller -> UI : Respond with success
+UI -> Manager : Show confirmation
+@enduml

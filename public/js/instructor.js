@@ -1,6 +1,4 @@
-let formMode = "search"; // Tracks the current mode of the form
-
-// Fetch all instructor IDs and populate the dropdown
+let formMode = "search"; 
 document.addEventListener("DOMContentLoaded", () => {
   setFormForSearch();
   initInstructorDropdown();
@@ -8,7 +6,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 });
 
-//SEARCH
 document.getElementById("searchBtn").addEventListener("click", async () => {
   clearInstructorForm();
   setFormForSearch();
@@ -16,15 +13,12 @@ document.getElementById("searchBtn").addEventListener("click", async () => {
 });
 
 
-//ADD
 document.getElementById("addBtn").addEventListener("click", async () => {
   setFormForAdd();
 });
 
-//SAVE
 document.getElementById("saveBtn").addEventListener("click", async () => {
   if (formMode === "add") {
-    //Get max ID for instructorId
     const res = await fetch("/api/instructor/getNextId");
     const {nextId } = await res.json();
     document.getElementById("instructorIdText").value = nextId;
@@ -59,7 +53,7 @@ document.getElementById("saveBtn").addEventListener("click", async () => {
   }
 });
 
-//DELETE
+
 document.getElementById("deleteBtn").addEventListener("click", async () => {
   var select = document.getElementById("instructorIdSelect");
   var instructorId = select.value.split(":")[0];
@@ -115,7 +109,6 @@ async function addInstructorDropdownListener() {
         return;
       }
 
-      //Fill form with data
       form.firstname.value = data.firstname || "";
       form.lastname.value = data.lastname || "";
       form.address.value = data.address || "";
@@ -132,23 +125,23 @@ async function addInstructorDropdownListener() {
 }
 
 function clearInstructorForm() {
-  document.getElementById("instructorForm").reset(); // Clears all inputs including text, textarea, and unchecks radio buttons
+  document.getElementById("instructorForm").reset(); 
   document.getElementById("instructorIdSelect").innerHTML = "";
 }
 
 function setFormForSearch() {
-  formMode = "search";
   //toggle back to search mode
-  document.getElementById("instructorIdLabel").style.display = "block"; // Show dropdown
-  document.getElementById("instructorIdTextLabel").style.display = "none"; // Hide text input
+  formMode = "search";
+  document.getElementById("instructorIdLabel").style.display = "block"; 
+  document.getElementById("instructorIdTextLabel").style.display = "none";
   document.getElementById("instructorIdText").value = "";
   document.getElementById("instructorIdText").style.display = "none";
   document.getElementById("instructorForm").reset();
 }
 
 function setFormForAdd() {
+  //hide the instructor id drop down and label
   formMode = "add";
-    //hide the instructor id drop down and label
   document.getElementById("instructorIdLabel").style.display = "none";
   document.getElementById("instructorIdTextLabel").style.display = "block";
   document.getElementById("instructorIdText").value = "";
