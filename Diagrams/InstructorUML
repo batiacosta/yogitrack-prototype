@@ -1,8 +1,8 @@
 @startuml
 class Instructor {
   - instructorId : String
-  - firstName : String
-  - lastName : String
+  - firstname : String
+  - lastname : String
   - address : String
   - phone : String
   - email : String
@@ -10,20 +10,15 @@ class Instructor {
 }
 
 class InstructorController {
-  + addInstructor(data)
-  + checkDuplicateName(firstName, lastName)
-  + generateInstructorId()
-  + validateData(data)
-  + saveToMongoDB(data)
-  + saveToJsonFile(data)
-  + sendConfirmation(instructor)
+  + add(req, res)
+  + getInstructor(req, res)
+  + getInstructorIds(req, res)
+  + getNextId(req, res)
+  + deleteInstructor(req, res)
 }
 
 class InstructorModel
 
-class InstructorJsonFile
-
 InstructorController --> InstructorModel : uses
-InstructorController --> InstructorJsonFile : uses
 InstructorController --> Instructor : creates
 @enduml

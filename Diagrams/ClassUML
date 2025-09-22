@@ -1,29 +1,26 @@
 @startuml
 class Class {
   - classId : String
+  - className : String
   - instructorId : String
+  - classType : String
+  - description : String
+  - daytime : Daytime[]
+}
+
+class Daytime {
   - day : String
   - time : String
-  - classType : String
-  - payRate : Number
+  - duration : Number
 }
 
 class ClassController {
-  + addClass(data)
-  + checkScheduleConflict(day, time)
-  + suggestAlternatives(day, time)
-  + generateClassId()
-  + validateData(data)
-  + saveToMongoDB(data)
-  + saveToJsonFile(data)
-  + sendConfirmation(class)
+  + addClass(req, res)
+  + listClasses(req, res)
 }
 
 class ClassModel
 
-class ClassJsonFile
-
 ClassController --> ClassModel : uses
-ClassController --> ClassJsonFile : uses
 ClassController --> Class : creates
 @enduml

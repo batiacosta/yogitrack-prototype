@@ -3,7 +3,6 @@ actor Manager
 participant "Frontend UI" as UI
 participant "InstructorController" as Controller
 participant "MongoDB"
-participant "Instructor.json"
 
 Manager -> UI : Click "Add New Instructor"
 UI -> Controller : POST /api/instructor/add (instructor data)
@@ -17,7 +16,6 @@ end
 Controller -> Controller : Generate instructorId
 Controller -> Controller : Validate data
 Controller -> MongoDB : Save instructor
-Controller -> Instructor.json : Save instructor
 Controller -> Controller : Send confirmation message
 Controller -> UI : Respond with success
 UI -> Manager : Show confirmation
