@@ -1,0 +1,103 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+' === MODELS ===
+class InstructorModel {
+	+ instructorId : String
+	+ firstname : String
+	+ lastname : String
+	+ address : String
+	+ phone : String
+	+ email : String
+	+ preferredContact : String
+}
+
+class ClassModel {
+	+ classId : String
+	+ className : String
+	+ instructorId : String
+	+ classType : String
+	+ description : String
+	+ daytime : Daytime[]
+}
+
+class Daytime {
+	+ day : String
+	+ time : String
+	+ duration : Number
+}
+
+' (Other models like CustomerModel, PackageModel, SaleModel, AttendanceModel can be added similarly)
+
+class CustomerModel {
+	+ customerId : String
+	+ firstname : String
+	+ lastname : String
+	+ address : String
+	+ phone : String
+	+ email : String
+	+ preferredContact : String
+	+ classBalance : Number
+}
+
+class PackageModel {
+	+ packageId : String
+	+ packageName : String
+	+ packageCategory : String
+	+ numClasses : Number
+	+ classType : String
+	+ startDate : Date
+	+ endDate : Date
+	+ price : Number
+}
+
+class SaleModel {
+	+ saleId : String
+	+ customerId : String
+	+ packageId : String
+	+ amountPaid : Number
+	+ paymentMode : String
+	+ paymentDate : Date
+	+ validityStart : Date
+	+ validityEnd : Date
+}
+
+class AttendanceModel {
+	+ attendanceId : String
+	+ classId : String
+	+ instructorId : String
+	+ date : Date
+	+ time : String
+	+ customerIds : String[]
+}
+
+' === CONTROLLERS ===
+class InstructorController {
+	+ add(req, res)
+	+ getInstructor(req, res)
+	+ getInstructorIds(req, res)
+	+ getNextId(req, res)
+	+ deleteInstructor(req, res)
+}
+
+class ClassController {
+	+ addClass(req, res)
+	+ listClasses(req, res)
+}
+
+' (Other controllers like CustomerController, PackageController, SaleController, AttendanceController can be added similarly)
+
+' === RELATIONSHIPS ===
+InstructorController --> InstructorModel : uses
+ClassController --> ClassModel : uses
+ClassModel --> Daytime : contains
+
+ClassModel "*" -- "1" InstructorModel : taught by
+ClassModel "1" -- "*" AttendanceModel : has
+AttendanceModel "*" -- "1" InstructorModel : marked by
+AttendanceModel "*" -- "*" CustomerModel : for
+SaleModel "*" -- "1" CustomerModel : for
+SaleModel "*" -- "1" PackageModel : for
+CustomerModel "1" -- "*" AttendanceModel : attends
+
+@enduml

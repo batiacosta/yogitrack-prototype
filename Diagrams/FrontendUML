@@ -1,0 +1,77 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+' === FRONTEND JS CLASS DIAGRAM (ACTUAL IMPLEMENTATION) ===
+
+class InstructorFormModule {
+  + setFormForSearch()
+  + setFormForAdd()
+  + clearInstructorForm()
+  + initInstructorDropdown()
+  + addInstructorDropdownListener()
+  + handleAdd()
+  + handleSave()
+  + handleDelete()
+}
+
+class ClassFormModule {
+  + setFormForSearch()
+  + setFormForAdd()
+  + clearClassForm()
+  + initClassDropdown()
+  + addClassDropdownListener()
+  + handleAdd()
+  + handleSave()
+  + handleDelete()
+  + populateInstructorDropdown()
+  + validateSchedule()
+}
+
+class APIService {
+  + getNextInstructorId()
+  + addInstructor(data)
+  + getInstructorIds()
+  + getInstructor(id)
+  + deleteInstructor(id)
+  + getNextClassId()
+  + addClass(data)
+  + getClassIds()
+  + getClass(id)
+  + deleteClass(id)
+}
+
+class UIUtils {
+  + showAlert(msg)
+  + showError(msg)
+  + showConfirmation(msg)
+  + populateDropdown()
+}
+
+InstructorFormModule ..> APIService : uses
+InstructorFormModule ..> UIUtils : uses
+ClassFormModule ..> APIService : uses
+ClassFormModule ..> UIUtils : uses
+
+note right of InstructorFormModule
+  Logic from instructor.js:
+  - Handles instructor add/search/delete
+  - Populates dropdowns
+  - Validates and resets form
+end note
+
+note right of ClassFormModule
+  Logic from class.js:
+  - Handles class add/search/delete
+  - Populates instructor/class dropdowns
+  - Validates schedule and form
+end note
+
+note right of APIService
+  Abstracts fetch calls to backend API endpoints for both Instructor and Class
+end note
+
+note right of UIUtils
+  Handles UI feedback and dropdown population
+end note
+
+@enduml
