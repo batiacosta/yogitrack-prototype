@@ -1,0 +1,97 @@
+@startuml
+!theme plain
+skinparam linetype ortho
+
+entity Instructor {
+  * _id : ObjectId <<PK>>
+  --
+  * instructorId : String <<UK>>
+  * firstName : String
+  * lastName : String
+  * address : String
+  * phone : String
+  * email : String <<UK>>
+  * preferredContact : String
+}
+
+entity Class {
+  * _id : ObjectId <<PK>>
+  --
+  * classId : String <<UK>>
+  * className : String
+  * instructorId : String <<FK>>
+  * classType : String
+  * description : String
+  * daytime : Array[Object]
+    - day : String
+    - time : String
+    - duration : Integer
+}
+
+entity Customer {
+  * _id : ObjectId <<PK>>
+  --
+  * customerId : String <<UK>>
+  * firstName : String
+  * lastName : String
+  * address : String
+  * phone : String
+  * email : String <<UK>>
+  * preferredContact : String
+  * classBalance : Integer
+}
+
+entity Package {
+  * _id : ObjectId <<PK>>
+  --
+  * packageId : String <<UK>>
+  * packageName : String
+  * packageCategory : String
+  * numberOfClasses : Integer
+  * classType : String
+  * startDate : Date
+  * endDate : Date
+  * price : Number
+}
+
+entity Sale {
+  * _id : ObjectId <<PK>>
+  --
+  * saleId : String <<UK>>
+  * customerId : String <<FK>>
+  * packageId : String <<FK>>
+  * amountPaid : Number
+  * modeOfPayment : String
+  * dateTime : Date
+  * validityStartDate : Date
+  * validityEndDate : Date
+}
+
+entity Attendance {
+  * _id : ObjectId <<PK>>
+  --
+  * attendanceId : String <<UK>>
+  * classId : String <<FK>>
+  * instructorId : String <<FK>>
+  * date : Date
+  * time : String
+  * customers : Array[String] <<FK>>
+}
+
+' Relationships
+Instructor ||--o{ Class : "instructorId"
+Class ||--o{ Attendance : "classId"
+Instructor ||--o{ Attendance : "instructorId"
+Customer ||--o{ Sale : "customerId"
+Package ||--o{ Sale : "packageId"
+Customer }o--o{ Attendance : "customers[]"
+
+' Cardinality notes
+note top of Instructor : One instructor teaches\nmultiple classes
+note top of Class : Each class has embedded\ndaytime array with\nday, time, duration
+note top of Customer : Customer ID format: C00001\nClass balance tracks remaining classes
+note top of Package : Package types: General/Special\nCategories: General/Senior
+note top of Sale : Links customer to package purchase\nUpdates customer class balance
+note top of Attendance : Many-to-many relationship\nwith customers via array
+
+@enduml
