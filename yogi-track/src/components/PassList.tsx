@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { passService } from '../services/passService';
 import type { PassData } from '../services/passService';
+import EditPassModal from './EditPassModal';
 
 interface PassCardProps {
   pass: PassData;
@@ -123,6 +124,8 @@ const PassList: React.FC<PassListProps> = ({ userType, onPassPurchased }) => {
   const [passes, setPasses] = useState<PassData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [editingPass, setEditingPass] = useState<PassData | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const isManager = userType === 'Manager';
 
@@ -153,8 +156,17 @@ const PassList: React.FC<PassListProps> = ({ userType, onPassPurchased }) => {
   };
 
   const handleEdit = (pass: PassData) => {
-    // TODO: Open edit modal
-    console.log('Edit pass:', pass);
+    setEditingPass(pass);
+    setIsEditModalOpen(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+    setEditingPass(null);
+  };
+
+  const handlePassUpdated = () => {
+    loadPasses(); // Refresh the list
   };
 
   const handleDelete = async (passId: string) => {
@@ -228,6 +240,14 @@ const PassList: React.FC<PassListProps> = ({ userType, onPassPurchased }) => {
           />
         ))}
       </div>
+
+      {/* Edit Pass Modal */}
+      <EditPassModal
+        pass={editingPass}
+        isOpen={isEditModalOpen}
+        onClose={handleCloseEditModal}
+        onPassUpdated={handlePassUpdated}
+      />
     </div>
   );
 };

@@ -1,4 +1,6 @@
 const User = require("../models/userModel.cjs");
+const Manager = require("../models/managerModel.cjs");
+const Instructor = require("../models/instructorModel.cjs");
 const Password = require("../models/passwordModel.cjs");
 const jwt = require("jsonwebtoken");
 
@@ -68,6 +70,27 @@ exports.register = async (req, res) => {
 
         // Create password record
         await Password.setPassword(userId, password);
+
+        // Create role-specific records
+        if (userType === 'Manager') {
+            const managerId = await Manager.generateManagerId();
+            const manager = new Manager({
+                managerId,
+                userId,
+                department: 'Operations',
+                isActive: true
+            });
+            await manager.save();
+        } else if (userType === 'Instructor') {
+            const instructorId = await Instructor.generateInstructorId();
+            const instructor = new Instructor({
+                instructorId,
+                userId,
+                specialties: [],
+                isActive: true
+            });
+            await instructor.save();
+        }
 
         // Send welcome message
         newUser.sendWelcomeMessage();
