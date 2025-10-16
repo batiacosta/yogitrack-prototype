@@ -3,9 +3,10 @@ import { authService } from '../services/authService';
 
 interface LoginProps {
   onLoginSuccess: () => void;
+  onSignUpClick: () => void;
 }
 
-const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
+const Login: React.FC<LoginProps> = ({ onLoginSuccess, onSignUpClick }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -161,9 +162,12 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
               Don't have an account?{' '}
-              <a href="#" className="font-medium text-yogi-orange hover:text-yogi-brown">
+              <button
+                onClick={onSignUpClick}
+                className="font-medium text-yogi-orange hover:text-yogi-brown cursor-pointer"
+              >
                 Sign up for free
-              </a>
+              </button>
             </p>
           </div>
         </div>

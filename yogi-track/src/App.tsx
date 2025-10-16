@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import Login from './components/Login';
+import SignUp from './components/SignUp';
 import Dashboard from './components/Dashboard';
 import { authService } from './services/authService';
 import type { User } from './services/authService';
@@ -9,6 +10,7 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showSignUp, setShowSignUp] = useState(false);
 
   useEffect(() => {
     // Check if user is already logged in
@@ -35,6 +37,22 @@ function App() {
     authService.logout();
     setIsAuthenticated(false);
     setUser(null);
+    setShowSignUp(false);
+  };
+
+  const handleSignUpSuccess = () => {
+    const authState = authService.getAuthState();
+    setIsAuthenticated(true);
+    setUser(authState.user);
+    setShowSignUp(false);
+  };
+
+  const handleShowSignUp = () => {
+    setShowSignUp(true);
+  };
+
+  const handleBackToLogin = () => {
+    setShowSignUp(false);
   };
 
   if (isLoading) {
@@ -52,8 +70,10 @@ function App() {
     <div className="App">
       {isAuthenticated && user ? (
         <Dashboard user={user} onLogout={handleLogout} />
+      ) : showSignUp ? (
+        <SignUp onSignUpSuccess={handleSignUpSuccess} onBackToLogin={handleBackToLogin} />
       ) : (
-        <Login onLoginSuccess={handleLoginSuccess} />
+        <Login onLoginSuccess={handleLoginSuccess} onSignUpClick={handleShowSignUp} />
       )}
     </div>
   );

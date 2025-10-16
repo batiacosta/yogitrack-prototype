@@ -48,6 +48,40 @@ class AuthService {
     return data;
   }
 
+  // Register method
+  async register(userData: {
+    firstname: string;
+    lastname: string;
+    email: string;
+    phone: string;
+    address: string;
+    password: string;
+  }): Promise<LoginResponse> {
+    const response = await fetch(`${this.baseURL}/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ...userData,
+        userType: 'User', // Default to User (Client) type
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Registration failed');
+    }
+
+    const data: LoginResponse = await response.json();
+    
+    // Store token and user in localStorage (auto-login after registration)
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('user', JSON.stringify(data.user));
+    
+    return data;
+  }
+
   // Get stored authentication state
   getAuthState(): AuthState {
     const token = localStorage.getItem('token');
