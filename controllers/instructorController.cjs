@@ -1,29 +1,44 @@
 const Instructor = require("../models/instructorModel.cjs");
+const User = require("../models/userModel.cjs");
 
 exports.search = async (req, res) => {
   try {
     const searchString = req.query.firstname;
-    const instructor = await Instructor.find({
+    
+    // First find users with matching firstname
+    const users = await User.find({
       firstname: { $regex: searchString, $options: "i" },
+      userType: 'User'
     });
 
-    if (!instructor || instructor.length == 0) {
-      return res.status(404).json({ message: "No instructor found" });
-    } else {
-      res.json(instructor[0]);
+    if (!users || users.length == 0) {
+      return res.status(404).json({ message: "No user found" });
     }
+
+    // Get instructor details for the first matching user
+    const instructor = await Instructor.findOne({ userId: users[0].userId }).populate('userId');
+    
+    if (!instructor) {
+      return res.status(404).json({ message: "User is not an instructor" });
+    }
+
+    res.json(instructor);
   } catch (e) {
     res.status(400).json({error: e.message});
   }
 };
 
-//Find the package selected in the dropdown
+//Find the instructor selected in the dropdown
 exports.getInstructor = async (req, res) => {
   try {
     const instructorId = req.query.instructorId;
-    const instructorDetail = await Instructor.findOne({ instructorId: instructorId });
+    const instructor = await Instructor.findOne({ instructorId: instructorId }).populate('userId');
 
-    res.json(instructorDetail);
+    if (!instructor) {
+      return res.status(404).json({ message: "Instructor not found" });
+    }
+
+    res.json(instructor);
   } catch (e) {
     res.status(400).json({ error: e.message });
   }
@@ -33,64 +48,58 @@ exports.add = async (req, res) => {
   const fs = require('fs');
   const path = require('path');
   const instructorJsonPath = path.join(__dirname, '../data/Instructor.json');
+  
   try {
     const {
-      firstname,
-      lastname,
-      email,
-      phone,
-      address,
-      preferredContact
+      userId,
+      specializations,
+      hireDate
     } = req.body;
 
     // Validate required fields
-    if (!firstname || !lastname || !email || !phone || !address || !preferredContact) {
-      return res.status(400).json({ message: "All fields are required." });
+    if (!userId) {
+      return res.status(400).json({ 
+        message: 'UserId is required' 
+      });
     }
 
-    // Check for duplicate name
-    const duplicate = await Instructor.findOne({ firstname, lastname });
-    if (duplicate) {
-      // Allow duplicates but warn frontend
-      return res.status(409).json({ message: "Duplicate name found. Confirm to proceed.", duplicate: true });
+    // Check if user exists and is not already an instructor
+    const user = await User.findOne({ userId: userId });
+    if (!user) {
+      return res.status(404).json({ 
+        message: 'User not found. User must be registered first.' 
+      });
     }
 
-    // Generate new instructorId (Ixxxxx)
-    let maxId = 0;
-    const dbInstructors = await Instructor.find({});
-    dbInstructors.forEach(inst => {
-      if (inst.instructorId && /^I\d+$/.test(inst.instructorId)) {
-        const num = parseInt(inst.instructorId.slice(1));
-        if (num > maxId) maxId = num;
-      }
-    });
-    // Also check JSON file
-    if (fs.existsSync(instructorJsonPath)) {
-      try {
-        const jsonData = JSON.parse(fs.readFileSync(instructorJsonPath, 'utf8'));
-        jsonData.forEach(inst => {
-          if (inst.instructorId && /^I\d+$/.test(inst.instructorId)) {
-            const num = parseInt(inst.instructorId.slice(1));
-            if (num > maxId) maxId = num;
-          }
-        });
-      } catch (e) {}
+    // Check if user is already an instructor
+    const existingInstructor = await Instructor.findOne({ userId: userId });
+    if (existingInstructor) {
+      return res.status(409).json({ 
+        message: 'User is already an instructor' 
+      });
     }
-    const instructorId = 'I' + String(maxId + 1).padStart(5, '0');
+
+    // Generate new instructorId
+    const instructorId = await Instructor.generateInstructorId();
 
     // Create a new instructor document
     const newInstructor = new Instructor({
       instructorId,
-      firstname,
-      lastname,
-      address,
-      phone,
-      email,
-      preferredContact
+      userId,
+      classIds: [],
+      specializations: specializations || [],
+      hireDate: hireDate || new Date(),
+      isActive: true
     });
 
     // Save to database
     await newInstructor.save();
+
+    // Update user's userType to Instructor
+    await User.findOneAndUpdate(
+      { userId: userId },
+      { userType: 'Instructor' }
+    );
 
     // Save to Instructor.json
     let jsonData = [];
@@ -99,65 +108,89 @@ exports.add = async (req, res) => {
         jsonData = JSON.parse(fs.readFileSync(instructorJsonPath, 'utf8'));
       } catch (e) {}
     }
-    jsonData.push({
+    
+    const instructorData = {
       instructorId,
-      firstname,
-      lastname,
-      address,
-      phone,
-      email,
-      preferredContact
-    });
+      userId,
+      classIds: [],
+      specializations: specializations || [],
+      hireDate: hireDate || new Date(),
+      isActive: true
+    };
+    
+    jsonData.push(instructorData);
     fs.writeFileSync(instructorJsonPath, JSON.stringify(jsonData, null, 2));
 
-    // Simulate sending confirmation message
-    console.log(`Welcome to Yoga'Hom! ... Your instructor id is ${instructorId}.`);
-    res.status(201).json({ message: "Instructor added successfully", instructorId });
+    // Get full instructor details with user info
+    const fullInstructor = await Instructor.findOne({ instructorId }).populate('userId');
+
+    // Send confirmation message
+    console.log(`Welcome to Yoga'Hom as an instructor! Your instructor id is ${instructorId}.`);
+    
+    res.status(201).json({ 
+      message: "Instructor added successfully", 
+      instructorId,
+      instructor: fullInstructor
+    });
+    
   } catch (err) {
     console.error("Error adding instructor:", err.message);
-    res.status(500).json({ message: "Failed to add instructor", error: err.message });
+    res.status(500).json({ 
+      message: "Failed to add instructor", 
+      error: err.message 
+    });
   }
 };
 
 //Populate the instructorId dropdown
 exports.getInstructorIds = async (req, res) => {
   try {
-    const instructors = await Instructor.find(
-      {},
-      { instructorId: 1, firstname: 1, lastname: 1, _id: 0 }
-    ).sort();
+    const instructors = await Instructor.find({}, { instructorId: 1, userId: 1, _id: 0 })
+      .populate('userId', 'firstname lastname')
+      .sort();
 
-    res.json(instructors);
+    const instructorList = instructors.map(instructor => ({
+      instructorId: instructor.instructorId,
+      userId: instructor.userId._id,
+      firstname: instructor.userId.firstname,
+      lastname: instructor.userId.lastname
+    }));
+
+    res.json(instructorList);
   } catch (e) {
     res.status(400).json({ error: e.message });
   }
 };
 
 exports.getNextId = async (req, res) => {
-  const lastInstructor = await Instructor.find({})
-    .sort({ instructorId: -1 })
-    .limit(1);
-
-  let maxNumber = 1;
-  if (lastInstructor.length > 0) {
-    const lastId = lastInstructor[0].instructorId;
-    const match = lastId.match(/\d+$/);
-    if (match) {
-      maxNumber = parseInt(match[0]) + 1;
-    }
+  try {
+    const nextId = await Instructor.generateInstructorId();
+    res.json({ nextId });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
-  const nextId = `I${maxNumber}`;
-  res.json({ nextId });
 };
 
 exports.deleteInstructor = async (req, res) => {
   try {
      const {instructorId} = req.query;
-     const result = await Instructor.findOneAndDelete({ instructorId });
-     if (!result) {
+     
+     // Find the instructor first to get the userId
+     const instructor = await Instructor.findOne({ instructorId });
+     if (!instructor) {
       return res.status(404).json({ error: "Instructor not found" });
-    }
-    res.json({ message: "Instructor deleted", instructorId });
+     }
+     
+     // Delete the instructor record
+     await Instructor.findOneAndDelete({ instructorId });
+     
+     // Update the user's userType back to 'User'
+     await User.findOneAndUpdate(
+       { userId: instructor.userId },
+       { userType: 'User' }
+     );
+     
+     res.json({ message: "Instructor deleted and user status updated", instructorId });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
