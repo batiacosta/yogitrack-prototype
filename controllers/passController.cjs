@@ -201,12 +201,15 @@ exports.purchasePass = async (req, res) => {
 
         await userPass.save();
 
-        // Populate the pass details for response
-        await userPass.populate('passId');
+        // Get the pass details for response
+        const passDetails = await Pass.findOne({ passId: pass.passId });
 
         res.status(201).json({
             message: 'Pass purchased successfully',
-            userPass,
+            userPass: {
+                ...userPass.toObject(),
+                passId: passDetails
+            },
             user: {
                 name: `${user.firstname} ${user.lastname}`,
                 email: user.email
@@ -223,10 +226,24 @@ exports.purchasePass = async (req, res) => {
 exports.getUserPasses = async (req, res) => {
     try {
         const userPasses = await UserPass.find({ userId: req.user.userId })
-            .populate('passId')
             .sort({ purchaseDate: -1 });
 
-        res.json(userPasses);
+        if (!userPasses || userPasses.length === 0) {
+            return res.json({ message: 'No passes found', userPasses: [] });
+        }
+
+        // Manually populate pass details
+        const populatedUserPasses = await Promise.all(
+            userPasses.map(async (userPass) => {
+                const pass = await Pass.findOne({ passId: userPass.passId });
+                return {
+                    ...userPass.toObject(),
+                    passId: pass
+                };
+            })
+        );
+
+        res.json({ userPasses: populatedUserPasses });
     } catch (error) {
         console.error('Get user passes error:', error);
         res.status(500).json({ message: 'Server error', error: error.message });
@@ -236,8 +253,26 @@ exports.getUserPasses = async (req, res) => {
 // Get user's active passes
 exports.getUserActivePasses = async (req, res) => {
     try {
-        const activePasses = await UserPass.getUserActivePasses(req.user.userId);
-        res.json(activePasses);
+        const now = new Date();
+        const activePasses = await UserPass.find({ 
+            userId: req.user.userId,
+            isActive: true,
+            expirationDate: { $gt: now },
+            sessionsRemaining: { $gt: 0 }
+        }).sort({ expirationDate: 1 });
+
+        // Manually populate pass details
+        const populatedActivePasses = await Promise.all(
+            activePasses.map(async (userPass) => {
+                const pass = await Pass.findOne({ passId: userPass.passId });
+                return {
+                    ...userPass.toObject(),
+                    passId: pass
+                };
+            })
+        );
+
+        res.json(populatedActivePasses);
     } catch (error) {
         console.error('Get user active passes error:', error);
         res.status(500).json({ message: 'Server error', error: error.message });
