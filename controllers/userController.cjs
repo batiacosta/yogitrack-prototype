@@ -41,34 +41,17 @@ exports.createUser = async (req, res) => {
         // Generate userId
         const userId = await User.generateUserId(userType);
 
-        // Create user based on type
-        let newUser;
-        if (userType === 'Instructor') {
-            newUser = new Instructor({
-                userId,
-                firstname,
-                lastname,
-                email,
-                phone,
-                address,
-                preferredContact: preferredContact || 'email',
-                userType,
-                classIds: [],
-                specializations: [],
-                isActive: true
-            });
-        } else {
-            newUser = new User({
-                userId,
-                firstname,
-                lastname,
-                email,
-                phone,
-                address,
-                preferredContact: preferredContact || 'email',
-                userType
-            });
-        }
+        // Create user (Note: Instructors are created separately through instructor controller)
+        const newUser = new User({
+            userId,
+            firstname,
+            lastname,
+            email,
+            phone,
+            address,
+            preferredContact: preferredContact || 'email',
+            userType
+        });
 
         // Save to database
         await newUser.save();
