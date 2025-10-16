@@ -9,7 +9,7 @@ router.get("/get", verifyToken, managerController.getManager);
 router.get("/all", verifyToken, managerController.getAllManagers);
 router.get("/ids", verifyToken, managerController.getManagerIds);
 router.get("/nextId", verifyToken, managerController.getNextManagerId);
-router.put("/permissions/:managerId", verifyToken, managerController.updateManagerPermissions);
+router.put("/update/:managerId", verifyToken, managerController.updateManager);
 router.delete("/delete", verifyToken, managerController.deleteManager);
 
 // Manager functionality - Instructor management

@@ -2,6 +2,9 @@ const express = require("express");
 const app = express();
 const path = require('path');
 
+// Connect to MongoDB
+require("./config/mongodbconn.cjs");
+
 //app.use(express.static("public"));
 app.use('/', express.static(path.join(__dirname + '/yogi-track/dist')));
 app.use(express.json());
