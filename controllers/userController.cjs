@@ -331,3 +331,22 @@ exports.getAvailableUsersForInstructor = async (req, res) => {
         });
     }
 };
+
+// Get available users for manager promotion
+exports.getAvailableUsersForManager = async (req, res) => {
+    try {
+        // Get all users with userType 'User' or 'Instructor' (can promote to manager)
+        const availableUsers = await User.find({ 
+            userType: { $in: ['User', 'Instructor'] }
+        });
+        
+        res.json(availableUsers);
+
+    } catch (err) {
+        console.error('Error fetching available users for manager:', err);
+        res.status(500).json({ 
+            message: 'Server error', 
+            error: err.message 
+        });
+    }
+};

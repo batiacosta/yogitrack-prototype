@@ -11,6 +11,7 @@ app.use("/api/instructor", require("./routes/instructorRoutes.cjs"));
 app.use("/api/class", require("./routes/classRoutes.cjs"));
 app.use("/api/user", require("./routes/userRoutes.cjs"));
 app.use("/api/auth", require("./routes/authRoutes.cjs"));
+app.use("/api/manager", require("./routes/managerRoutes.cjs"));
 
 
 

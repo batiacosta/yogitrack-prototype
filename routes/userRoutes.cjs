@@ -24,6 +24,9 @@ router.get("/nextid/:userType", verifyToken, userController.getNextUserId);
 // Get available users for instructor promotion (protected)
 router.get("/available-for-instructor", verifyToken, userController.getAvailableUsersForInstructor);
 
+// Get available users for manager promotion (protected)
+router.get("/available-for-manager", verifyToken, userController.getAvailableUsersForManager);
+
 // Update user (protected)
 router.put("/update/:userId", verifyToken, userController.updateUser);
 
