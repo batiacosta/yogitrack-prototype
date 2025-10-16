@@ -1,19 +1,29 @@
 import React, { useState } from 'react';
+import { authService } from '../services/authService';
 
-const Login: React.FC = () => {
+interface LoginProps {
+  onLoginSuccess: () => void;
+}
+
+const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError('');
     
-    // Simulate login API call
-    setTimeout(() => {
+    try {
+      await authService.login(email, password);
+      onLoginSuccess();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Login failed');
+    } finally {
       setIsLoading(false);
-      console.log('Login attempt:', { email, password });
-    }, 1000);
+    }
   };
 
   return (
@@ -97,6 +107,30 @@ const Login: React.FC = () => {
                 <a href="#" className="font-medium text-emerald-400 hover:text-amber-500">
                   Forgot your password?
                 </a>
+              </div>
+            </div>
+
+            {/* Error Message */}
+            {error && (
+              <div className="rounded-md bg-red-50 p-4">
+                <div className="flex">
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-red-800">
+                      Login Failed
+                    </h3>
+                    <p className="mt-2 text-sm text-red-700">{error}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Test Credentials */}
+            <div className="rounded-md bg-blue-50 p-4">
+              <h3 className="text-sm font-medium text-blue-800 mb-2">Test Credentials:</h3>
+              <div className="text-xs text-blue-700 space-y-1">
+                <p><strong>Manager:</strong> manager1@gmail.com | 123456*</p>
+                <p><strong>Instructor:</strong> instructor1@gmail.com | 123456*</p>
+                <p><strong>Client:</strong> client1@gmail.com | 123456*</p>
               </div>
             </div>
 
