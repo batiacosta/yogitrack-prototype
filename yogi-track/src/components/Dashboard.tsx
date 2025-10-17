@@ -5,6 +5,7 @@ import UserPasses from './UserPasses';
 import CreatePassForm from './CreatePassForm';
 import AttendanceManager from './AttendanceManager';
 import ClassManager from './ClassManager';
+import ClassScheduler from './ClassScheduler';
 
 interface DashboardProps {
   user: User;
@@ -63,7 +64,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
       { id: 'classes', name: 'My Classes', icon: '🧘‍♀️' }
     ] : [
       { id: 'passes', name: 'Browse Passes', icon: '🎫' },
-      { id: 'my-passes', name: 'My Passes', icon: '📋' }
+      { id: 'my-passes', name: 'My Passes', icon: '📋' },
+      { id: 'schedule', name: 'Schedule Class', icon: '📅' }
     ])
   ];
 
@@ -243,10 +245,13 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
                           onClick={() => setActiveTab('my-passes')}
                           className="bg-blue-100 hover:bg-blue-200 text-blue-800 font-medium py-3 px-4 rounded-lg transition-colors duration-200"
                         >
-                          � My Passes
+                          📋 My Passes
                         </button>
-                        <button className="bg-orange-100 hover:bg-orange-200 text-orange-800 font-medium py-3 px-4 rounded-lg transition-colors duration-200">
-                          ⚙️ Profile Settings
+                        <button 
+                          onClick={() => setActiveTab('schedule')}
+                          className="bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-medium py-3 px-4 rounded-lg transition-colors duration-200"
+                        >
+                          📅 Schedule Class
                         </button>
                       </>
                     )}
@@ -290,6 +295,10 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
 
           {activeTab === 'classes' && (user.userType === 'Instructor' || user.userType === 'Manager') && (
             <ClassManager userType={user.userType} />
+          )}
+
+          {activeTab === 'schedule' && user.userType === 'User' && (
+            <ClassScheduler onNeedPass={() => setActiveTab('passes')} />
           )}
         </div>
       </main>
