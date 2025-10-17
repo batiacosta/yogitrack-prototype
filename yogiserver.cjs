@@ -37,6 +37,7 @@ app.use("/api/user", require("./routes/userRoutes.cjs"));
 app.use("/api/auth", require("./routes/authRoutes.cjs"));
 app.use("/api/manager", require("./routes/managerRoutes.cjs"));
 app.use("/api/pass", require("./routes/passRoutes.cjs"));
+app.use("/api/reports", require("./routes/reportsRoutes.cjs"));
 
 
 

@@ -9,6 +9,7 @@ import ClassScheduler from './ClassScheduler';
 import InstructorManager from './InstructorManager';
 import ClientManager from './ClientManager';
 import ManagerManager from './ManagerManager';
+import Reports from './Reports';
 
 interface DashboardProps {
   user: User;
@@ -65,7 +66,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
       { id: 'classes', name: 'Manage Classes', icon: '🧘‍♀️' },
       { id: 'instructors', name: 'Manage Instructors', icon: '👨‍🏫' },
       { id: 'clients', name: 'Manage Clients', icon: '👥' },
-      { id: 'managers', name: 'Manage Managers', icon: '👔' }
+      { id: 'managers', name: 'Manage Managers', icon: '👔' },
+      { id: 'reports', name: 'Reports', icon: '📈' }
     ] : user.userType === 'Instructor' ? [
       { id: 'attendance', name: 'Attendance', icon: '📋' },
       { id: 'classes', name: 'My Classes', icon: '🧘‍♀️' }
@@ -314,6 +316,10 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
 
           {activeTab === 'managers' && user.userType === 'Manager' && (
             <ManagerManager />
+          )}
+
+          {activeTab === 'reports' && user.userType === 'Manager' && (
+            <Reports />
           )}
 
           {activeTab === 'schedule' && user.userType === 'User' && (
