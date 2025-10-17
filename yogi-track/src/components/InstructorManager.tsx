@@ -52,11 +52,6 @@ const InstructorManager: React.FC = () => {
     loadData();
   }, []);
 
-  const loadData = async () => {
-    await loadInstructors();
-    await loadAvailableUsers();
-  };
-
   const loadInstructors = async () => {
     try {
       setIsLoading(true);
@@ -95,7 +90,9 @@ const InstructorManager: React.FC = () => {
             return null;
           })
         );
-        setInstructors(instructorDetails.filter(Boolean));
+        const validInstructors = instructorDetails.filter(Boolean);
+        setInstructors(validInstructors);
+        return validInstructors; // Return for use in loadAvailableUsers
       }
     } catch (err) {
       console.error('Failed to load instructors:', err);
@@ -103,6 +100,13 @@ const InstructorManager: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
+    return [];
+  };
+
+  const loadData = async () => {
+    const instructors = await loadInstructors();
+    await loadAvailableUsers();
+    return instructors;
   };
 
   const loadAvailableUsers = async () => {
@@ -139,6 +143,22 @@ const InstructorManager: React.FC = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
+        
+        // Handle specific case where user is already an instructor
+        if (response.status === 409 && errorData.message?.includes('already an instructor')) {
+          // User was likely created in a previous attempt, refresh data and show success
+          await loadData();
+          setModalMessage(`✅ User is already an instructor! Refreshing list...`);
+          setMessage(`✅ User is already an instructor! Refreshing list...`);
+          
+          setTimeout(() => {
+            setShowCreateForm(false);
+            setModalMessage('');
+            resetForm();
+          }, 2000);
+          return;
+        }
+        
         throw new Error(errorData.message || 'Failed to create instructor');
       }
 
@@ -146,11 +166,13 @@ const InstructorManager: React.FC = () => {
       setModalMessage(`✅ Instructor created successfully! ID: ${result.instructorId}`);
       setMessage(`✅ Instructor created successfully! ID: ${result.instructorId}`);
       
+      // Refresh data to update instructor list and available users
+      await loadData();
+      
       setTimeout(() => {
         setShowCreateForm(false);
         setModalMessage('');
         resetForm();
-        loadData();
       }, 2000);
     } catch (err) {
       console.error('Create instructor error:', err);
@@ -189,7 +211,7 @@ const InstructorManager: React.FC = () => {
       }
 
       setMessage('✅ Instructor deleted successfully!');
-      loadData();
+      await loadData(); // Refresh both instructors and available users
       
       setTimeout(() => setMessage(''), 3000);
     } catch (err) {
