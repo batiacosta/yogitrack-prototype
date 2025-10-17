@@ -244,22 +244,30 @@ const formatPercentage = (value: number): string => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {reportData.monthlyBreakdown.map((month: MonthlyData) => (
-                      <tr key={month.month}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {month.monthName}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {formatNumber(month.newUsers)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {formatNumber(month.packageSales)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {formatCurrency(month.revenue)}
+                    {reportData.monthlyBreakdown && reportData.monthlyBreakdown.length > 0 ? (
+                      reportData.monthlyBreakdown.map((month: MonthlyData) => (
+                        <tr key={month.month}>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {month.monthName}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {formatNumber(month.newUsers)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {formatNumber(month.packageSales)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {formatCurrency(month.revenue)}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={4} className="px-6 py-8 text-center">
+                          <p className="text-gray-500">No monthly data available for the selected period.</p>
                         </td>
                       </tr>
-                    ))}
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -332,8 +340,9 @@ const formatPercentage = (value: number): string => {
             <h3 className="text-lg font-semibold text-gray-900">Instructor Performance Details</h3>
           </div>
           <div className="p-6">
-            <div className="space-y-4">
-              {reportData.instructors.map((instructor: InstructorData) => (
+            {reportData.instructors && reportData.instructors.length > 0 ? (
+              <div className="space-y-4">
+                {reportData.instructors.map((instructor: InstructorData) => (
                 <div key={instructor.instructorId} className="border border-gray-200 rounded-lg p-4">
                   <div className="flex justify-between items-start mb-3">
                     <div>
@@ -366,7 +375,12 @@ const formatPercentage = (value: number): string => {
                   </div>
                 </div>
               ))}
-            </div>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-500">No instructor data available for the selected period.</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -447,32 +461,40 @@ const formatPercentage = (value: number): string => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {reportData.customers.map((customer: CustomerData) => (
-                    <tr key={customer.userId}>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{customer.name}</div>
-                        <div className="text-sm text-gray-500">{customer.userId}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {customer.totalScheduled}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {customer.totalAttended}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          parseFloat(customer.attendanceRate) >= 80 ? 'bg-green-100 text-green-800' :
-                          parseFloat(customer.attendanceRate) >= 60 ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-red-100 text-red-800'
-                        }`}>
-                          {customer.attendanceRate}%
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {customer.email}
+                  {reportData.customers && reportData.customers.length > 0 ? (
+                    reportData.customers.map((customer: CustomerData) => (
+                      <tr key={customer.userId}>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900">{customer.name}</div>
+                          <div className="text-sm text-gray-500">{customer.userId}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {customer.totalScheduled}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {customer.totalAttended}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            parseFloat(customer.attendanceRate) >= 80 ? 'bg-green-100 text-green-800' :
+                            parseFloat(customer.attendanceRate) >= 60 ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-red-100 text-red-800'
+                          }`}>
+                            {customer.attendanceRate}%
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {customer.email}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={5} className="px-6 py-8 text-center">
+                        <p className="text-gray-500">No customer data available for the selected period.</p>
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>
@@ -586,38 +608,46 @@ const formatPercentage = (value: number): string => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {reportData.classes.map((classData: ClassData) => (
-                    <tr key={classData.classId}>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{classData.className}</div>
-                        <div className="text-sm text-gray-500">{classData.classId}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {classData.classType}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {classData.instructorName}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {classData.totalRegistrations}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {classData.totalAttendance}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          parseFloat(classData.attendanceRate) >= 80 ? 'bg-green-100 text-green-800' :
-                          parseFloat(classData.attendanceRate) >= 60 ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-red-100 text-red-800'
-                        }`}>
-                          {classData.attendanceRate}%
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {classData.capacityUtilization}%
+                  {reportData.classes && reportData.classes.length > 0 ? (
+                    reportData.classes.map((classData: ClassData) => (
+                      <tr key={classData.classId}>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900">{classData.className}</div>
+                          <div className="text-sm text-gray-500">{classData.classId}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {classData.classType}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {classData.instructorName}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {classData.totalRegistrations}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {classData.totalAttendance}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            parseFloat(classData.attendanceRate) >= 80 ? 'bg-green-100 text-green-800' :
+                            parseFloat(classData.attendanceRate) >= 60 ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-red-100 text-red-800'
+                          }`}>
+                            {classData.attendanceRate}%
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {classData.capacityUtilization}%
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-8 text-center">
+                        <p className="text-gray-500">No class data available for the selected period.</p>
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>
