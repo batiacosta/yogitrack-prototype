@@ -112,12 +112,54 @@ const Reports: React.FC = () => {
     }).format(amount || 0);
   };
 
-  const formatPercentage = (value: number | string) => {
-    const number = typeof value === 'string' ? parseFloat(value) : value;
-    return isNaN(number) ? '0.0%' : `${number}%`;
-  };
+// Type definitions for report data
+interface ClassTypeStats {
+  classes: number;
+  totalRegistrations: number;
+  totalAttendance: number;
+  averageAttendanceRate: number;
+}
 
-  const renderPerformanceReport = () => {
+interface ClassData {
+  _id: string;
+  name: string;
+  type: string;
+  instructor: {
+    name: string;
+  };
+  registrations: number;
+  attendance: number;
+  attendanceRate: number;
+}
+
+interface MonthlyData {
+  month: string;
+  classes: number;
+  attendance: number;
+  registrations: number;
+}
+
+interface InstructorData {
+  _id: string;
+  name: string;
+  email: string;
+  classes: number;
+  totalAttendance: number;
+  averageAttendanceRate: number;
+}
+
+interface CustomerData {
+  _id: string;
+  name: string;
+  email: string;
+  classesAttended: number;
+  attendanceRate: number;
+}
+
+// Helper function to format percentage
+const formatPercentage = (value: number): string => {
+  return `${(value * 100).toFixed(1)}%`;
+};  const renderPerformanceReport = () => {
     if (!reportData) return null;
 
     return (
@@ -191,7 +233,7 @@ const Reports: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {reportData.monthlyBreakdown.map((month: any) => (
+                    {reportData.monthlyBreakdown.map((month: MonthlyData) => (
                       <tr key={month.month}>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                           {month.monthName}
@@ -280,7 +322,7 @@ const Reports: React.FC = () => {
           </div>
           <div className="p-6">
             <div className="space-y-4">
-              {reportData.instructors.map((instructor: any) => (
+              {reportData.instructors.map((instructor: InstructorData) => (
                 <div key={instructor.instructorId} className="border border-gray-200 rounded-lg p-4">
                   <div className="flex justify-between items-start mb-3">
                     <div>
@@ -394,7 +436,7 @@ const Reports: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {reportData.customers.map((customer: any) => (
+                  {reportData.customers.map((customer: CustomerData) => (
                     <tr key={customer.userId}>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">{customer.name}</div>
@@ -491,19 +533,25 @@ const Reports: React.FC = () => {
             <h3 className="text-lg font-semibold text-gray-900">Class Type Performance</h3>
           </div>
           <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {Object.entries(reportData.classTypeStats).map(([type, stats]: [string, any]) => (
-                <div key={type} className="border border-gray-200 rounded-lg p-4">
-                  <h4 className="font-semibold text-gray-900 mb-2">{type}</h4>
-                  <div className="space-y-1 text-sm">
-                    <div><span className="text-gray-600">Classes:</span> <span className="font-medium">{stats.classes}</span></div>
-                    <div><span className="text-gray-600">Registrations:</span> <span className="font-medium">{stats.totalRegistrations}</span></div>
-                    <div><span className="text-gray-600">Attendance:</span> <span className="font-medium">{stats.totalAttendance}</span></div>
-                    <div><span className="text-gray-600">Rate:</span> <span className="font-medium">{formatPercentage(stats.averageAttendanceRate)}</span></div>
+            {reportData.classTypeStats && Object.keys(reportData.classTypeStats).length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {Object.entries(reportData.classTypeStats).map(([type, stats]: [string, ClassTypeStats]) => (
+                  <div key={type} className="border border-gray-200 rounded-lg p-4">
+                    <h4 className="font-semibold text-gray-900 mb-2">{type}</h4>
+                    <div className="space-y-1 text-sm">
+                      <div><span className="text-gray-600">Classes:</span> <span className="font-medium">{stats.classes}</span></div>
+                      <div><span className="text-gray-600">Registrations:</span> <span className="font-medium">{stats.totalRegistrations}</span></div>
+                      <div><span className="text-gray-600">Attendance:</span> <span className="font-medium">{stats.totalAttendance}</span></div>
+                      <div><span className="text-gray-600">Rate:</span> <span className="font-medium">{formatPercentage(stats.averageAttendanceRate)}</span></div>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-500">No class type data available for the selected period.</p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -527,7 +575,7 @@ const Reports: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {reportData.classes.map((classData: any) => (
+                  {reportData.classes.map((classData: ClassData) => (
                     <tr key={classData.classId}>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">{classData.className}</div>
