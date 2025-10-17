@@ -104,13 +104,17 @@ const ClassScheduler: React.FC<ClassSchedulerProps> = ({ onNeedPass, onClassSche
           const past: UserRegistration[] = [];
           
         registrations.forEach((reg: UserRegistration) => {
-          // For simplicity, we'll consider all registrations as upcoming for now
-          // In a real app, you'd compare with actual class dates
-          const regDate = new Date(reg.registrationDate);
-          if (regDate.getTime() > now.getTime() - 24 * 60 * 60 * 1000) { // Within last 24 hours = upcoming
-            upcoming.push(reg);
-          } else {
+          // Classes with attendance marked are considered past classes
+          // Otherwise, compare with registration date
+          if (reg.attended === true) {
             past.push(reg);
+          } else {
+            const regDate = new Date(reg.registrationDate);
+            if (regDate.getTime() > now.getTime() - 24 * 60 * 60 * 1000) { // Within last 24 hours = upcoming
+              upcoming.push(reg);
+            } else {
+              past.push(reg);
+            }
           }
         });          setMyScheduledClasses(upcoming);
           setMyPastClasses(past);
@@ -158,11 +162,17 @@ const ClassScheduler: React.FC<ClassSchedulerProps> = ({ onNeedPass, onClassSche
         const past: UserRegistration[] = [];
         
         registrations.forEach((reg: UserRegistration) => {
-          const regDate = new Date(reg.registrationDate);
-          if (regDate.getTime() > now.getTime() - 24 * 60 * 60 * 1000) {
-            upcoming.push(reg);
-          } else {
+          // Classes with attendance marked are considered past classes
+          // Otherwise, compare with registration date
+          if (reg.attended === true) {
             past.push(reg);
+          } else {
+            const regDate = new Date(reg.registrationDate);
+            if (regDate.getTime() > now.getTime() - 24 * 60 * 60 * 1000) {
+              upcoming.push(reg);
+            } else {
+              past.push(reg);
+            }
           }
         });
         
