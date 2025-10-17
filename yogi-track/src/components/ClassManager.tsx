@@ -138,6 +138,12 @@ const ClassManager: React.FC<ClassManagerProps> = ({ userType }) => {
       if (!response.ok) {
         const errorData = await response.json();
         console.error('Error response:', errorData);
+        
+        // Handle scheduling conflicts specifically
+        if (response.status === 409) {
+          throw new Error(`⚠️ Scheduling Conflict: ${errorData.message}`);
+        }
+        
         throw new Error(errorData.message || 'Failed to create class');
       }
 
@@ -145,10 +151,19 @@ const ClassManager: React.FC<ClassManagerProps> = ({ userType }) => {
       setMessage(`✅ Class created successfully! Class ID: ${result.classId}`);
       setShowCreateForm(false);
       resetForm();
-      window.location.reload(); // Refresh to update class list
+      
+      // Auto-clear success message and refresh
+      setTimeout(() => {
+        setMessage('');
+        window.location.reload(); // Refresh to update class list
+      }, 2000);
     } catch (err) {
       console.error('Create class error:', err);
       setMessage(err instanceof Error ? err.message : 'Failed to create class');
+      
+      // Auto-clear message after 5 seconds for conflicts, 3 seconds for other errors
+      const clearTime = err instanceof Error && err.message.includes('⚠️') ? 5000 : 3000;
+      setTimeout(() => setMessage(''), clearTime);
     } finally {
       setIsLoading(false);
     }
@@ -295,7 +310,9 @@ const ClassManager: React.FC<ClassManagerProps> = ({ userType }) => {
       {message && (
         <div className={`p-3 rounded-lg ${
           message.includes('✅') 
-            ? 'bg-green-100 text-green-700 border border-green-200' 
+            ? 'bg-green-100 text-green-700 border border-green-200'
+            : message.includes('⚠️')
+            ? 'bg-orange-100 text-orange-700 border border-orange-200'
             : 'bg-red-100 text-red-700 border border-red-200'
         }`}>
           {message}
