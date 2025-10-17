@@ -32,13 +32,39 @@ exports.search = async (req, res) => {
 exports.getInstructor = async (req, res) => {
   try {
     const instructorId = req.query.instructorId;
-    const instructor = await Instructor.findOne({ instructorId: instructorId }).populate('userId');
+    const instructor = await Instructor.findOne({ instructorId: instructorId });
 
     if (!instructor) {
       return res.status(404).json({ message: "Instructor not found" });
     }
 
-    res.json(instructor);
+    // Get user details manually (since we use string IDs, not ObjectId refs)
+    const User = require("../models/userModel.cjs");
+    const user = await User.findOne({ userId: instructor.userId });
+    
+    if (!user) {
+      return res.status(404).json({ message: "User details not found for instructor" });
+    }
+
+    // Combine instructor and user data
+    const instructorWithUser = {
+      instructorId: instructor.instructorId,
+      userId: {
+        _id: user.userId,
+        firstname: user.firstname,
+        lastname: user.lastname,
+        email: user.email,
+        phone: user.phone,
+        address: user.address,
+        userType: user.userType
+      },
+      classIds: instructor.classIds,
+      specializations: instructor.specializations,
+      hireDate: instructor.hireDate,
+      isActive: instructor.isActive
+    };
+
+    res.json(instructorWithUser);
   } catch (e) {
     res.status(400).json({ error: e.message });
   }

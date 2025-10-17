@@ -64,35 +64,23 @@ const InstructorManager: React.FC = () => {
 
       if (response.ok) {
         const data = await response.json();
-        // Get full instructor details
-        const instructorDetails = await Promise.all(
-          data.map(async (instructor: { instructorId: string; userId: string; firstname: string; lastname: string }) => {
-            const detailResponse = await fetch(`${window.location.origin}/api/instructor/getInstructor?instructorId=${instructor.instructorId}`, {
-              headers: {
-                'Authorization': `Bearer ${token}`,
-              },
-            });
-            if (detailResponse.ok) {
-              const detail = await detailResponse.json();
-              return {
-                instructorId: detail.instructorId,
-                userId: detail.userId._id,
-                firstname: detail.userId.firstname,
-                lastname: detail.userId.lastname,
-                email: detail.userId.email,
-                phone: detail.userId.phone,
-                address: detail.userId.address,
-                specializations: detail.specializations || [],
-                hireDate: detail.hireDate,
-                isActive: detail.isActive
-              };
-            }
-            return null;
-          })
-        );
-        const validInstructors = instructorDetails.filter(Boolean);
-        setInstructors(validInstructors);
-        return validInstructors; // Return for use in loadAvailableUsers
+        // Use the data directly from getInstructorIds endpoint
+        // This includes: instructorId, userId, firstname, lastname
+        const instructorList = data.map((instructor: { instructorId: string; userId: string; firstname: string; lastname: string }) => ({
+          instructorId: instructor.instructorId,
+          userId: instructor.userId,
+          firstname: instructor.firstname,
+          lastname: instructor.lastname,
+          email: 'N/A', // We'll load this on demand if needed
+          phone: 'N/A',
+          address: 'N/A', 
+          specializations: [], // We'll load this on demand if needed
+          hireDate: new Date().toISOString(), // Default value
+          isActive: true // Default value
+        }));
+        
+        setInstructors(instructorList);
+        return instructorList; // Return for use in loadAvailableUsers
       }
     } catch (err) {
       console.error('Failed to load instructors:', err);
@@ -313,11 +301,9 @@ const InstructorManager: React.FC = () => {
               </div>
 
               <div className="space-y-2 text-sm">
-                <div><strong>Email:</strong> {instructor.email}</div>
-                <div><strong>Phone:</strong> {instructor.phone}</div>
-                <div><strong>Address:</strong> {instructor.address}</div>
-                <div><strong>Hire Date:</strong> {new Date(instructor.hireDate).toLocaleDateString()}</div>
-                <div><strong>Specializations:</strong> {instructor.specializations.length > 0 ? instructor.specializations.join(', ') : 'None'}</div>
+                <div><strong>User ID:</strong> {instructor.userId}</div>
+                <div><strong>Status:</strong> <span className="text-green-600">Active Instructor</span></div>
+                <div className="text-gray-500 italic">Full details available on request</div>
               </div>
 
               <div className="mt-4 flex space-x-2">
