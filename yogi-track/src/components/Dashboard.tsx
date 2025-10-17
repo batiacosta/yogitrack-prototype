@@ -204,7 +204,10 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
                         >
                           🎫 Manage Passes
                         </button>
-                        <button className="bg-blue-100 hover:bg-blue-200 text-blue-800 font-medium py-3 px-4 rounded-lg transition-colors duration-200">
+                        <button 
+                          onClick={() => setActiveTab('classes')}
+                          className="bg-blue-100 hover:bg-blue-200 text-blue-800 font-medium py-3 px-4 rounded-lg transition-colors duration-200"
+                        >
                           📅 Manage Classes
                         </button>
                         <button className="bg-green-100 hover:bg-green-200 text-green-800 font-medium py-3 px-4 rounded-lg transition-colors duration-200">
@@ -214,7 +217,10 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
                     )}
                     {user.userType === 'Instructor' && (
                       <>
-                        <button className="bg-blue-100 hover:bg-blue-200 text-blue-800 font-medium py-3 px-4 rounded-lg transition-colors duration-200">
+                        <button 
+                          onClick={() => setActiveTab('classes')}
+                          className="bg-blue-100 hover:bg-blue-200 text-blue-800 font-medium py-3 px-4 rounded-lg transition-colors duration-200"
+                        >
                           📅 My Classes
                         </button>
                         <button className="bg-green-100 hover:bg-green-200 text-green-800 font-medium py-3 px-4 rounded-lg transition-colors duration-200">
