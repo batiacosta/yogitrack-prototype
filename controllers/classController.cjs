@@ -61,13 +61,28 @@ exports.addClass = async (req, res) => {
       });
       
       if (conflict) {
+        // Get instructor details for better error message
+        const Instructor = require("../models/instructorModel.cjs");
+        const User = require("../models/userModel.cjs");
+        
+        const instructor = await Instructor.findOne({ instructorId: instructorId });
+        let instructorName = instructorId; // fallback to ID
+        
+        if (instructor) {
+          const user = await User.findOne({ userId: instructor.userId });
+          if (user) {
+            instructorName = `${user.firstname} ${user.lastname}`;
+          }
+        }
+        
         return res.status(409).json({ 
-          message: `Schedule conflict: Instructor ${instructorId} already has a class "${conflict.className}" on ${dt.day} at ${dt.time}`,
+          message: `Schedule conflict: Instructor ${instructorName} already has a class "${conflict.className}" on ${dt.day} at ${dt.time}`,
           conflictingClass: {
             classId: conflict.classId,
             className: conflict.className,
             day: dt.day,
-            time: dt.time
+            time: dt.time,
+            instructorName: instructorName
           }
         });
       }
@@ -336,11 +351,27 @@ exports.updateClass = async (req, res) => {
         });
         
         if (conflict) {
+          // Get instructor details for better error message
+          const Instructor = require("../models/instructorModel.cjs");
+          const User = require("../models/userModel.cjs");
+          
+          const currentInstructorId = instructorId || classDoc.instructorId;
+          const instructor = await Instructor.findOne({ instructorId: currentInstructorId });
+          let instructorName = currentInstructorId; // fallback to ID
+          
+          if (instructor) {
+            const user = await User.findOne({ userId: instructor.userId });
+            if (user) {
+              instructorName = `${user.firstname} ${user.lastname}`;
+            }
+          }
+          
           return res.status(409).json({ 
-            message: `Schedule conflict: Instructor already has a class on ${dt.day} at ${dt.time}`,
+            message: `Schedule conflict: Instructor ${instructorName} already has a class "${conflict.className}" on ${dt.day} at ${dt.time}`,
             conflictingClass: {
               classId: conflict.classId,
-              className: conflict.className
+              className: conflict.className,
+              instructorName: instructorName
             }
           });
         }
