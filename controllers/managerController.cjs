@@ -77,14 +77,23 @@ exports.createManager = async (req, res) => {
         fs.writeFileSync(managerJsonPath, JSON.stringify(jsonData, null, 2));
 
         // Get full manager details with user info
-        const fullManager = await Manager.findOne({ managerId }).populate('userId');
+        const fullManager = await Manager.findOne({ managerId });
+        
+        // Get user details manually
+        const User = require("../models/userModel.cjs");
+        const user = await User.findOne({ userId: fullManager.userId });
+        
+        const managerWithUser = {
+            ...fullManager.toObject(),
+            userId: user
+        };
 
         console.log(`Welcome to Yoga'Hom as a manager! Your manager id is ${managerId}.`);
         
         res.status(201).json({ 
             message: "Manager created successfully", 
             managerId,
-            manager: fullManager
+            manager: managerWithUser
         });
         
     } catch (err) {
@@ -100,13 +109,36 @@ exports.createManager = async (req, res) => {
 exports.getManager = async (req, res) => {
     try {
         const managerId = req.query.managerId;
-        const manager = await Manager.findOne({ managerId: managerId }).populate('userId');
+        const manager = await Manager.findOne({ managerId: managerId });
 
         if (!manager) {
             return res.status(404).json({ message: "Manager not found" });
         }
 
-        res.json(manager);
+        // Get user details manually
+        const User = require("../models/userModel.cjs");
+        const user = await User.findOne({ userId: manager.userId });
+        
+        if (!user) {
+            return res.status(404).json({ message: "User details not found for manager" });
+        }
+
+        const managerWithUser = {
+            managerId: manager.managerId,
+            userId: {
+                _id: user.userId,
+                firstname: user.firstname,
+                lastname: user.lastname,
+                email: user.email,
+                phone: user.phone,
+                address: user.address,
+                userType: user.userType
+            },
+            department: manager.department,
+            isActive: manager.isActive
+        };
+
+        res.json(managerWithUser);
     } catch (e) {
         res.status(400).json({ error: e.message });
     }
@@ -115,8 +147,23 @@ exports.getManager = async (req, res) => {
 // Get all managers
 exports.getAllManagers = async (req, res) => {
     try {
-        const managers = await Manager.find({}).populate('userId');
-        res.json(managers);
+        const managers = await Manager.find({});
+        
+        // Get user details manually for each manager
+        const User = require("../models/userModel.cjs");
+        const managerList = [];
+        
+        for (const manager of managers) {
+            const user = await User.findOne({ userId: manager.userId });
+            if (user) {
+                managerList.push({
+                    ...manager.toObject(),
+                    userId: user
+                });
+            }
+        }
+        
+        res.json(managerList);
     } catch (e) {
         res.status(400).json({ error: e.message });
     }
@@ -126,15 +173,23 @@ exports.getAllManagers = async (req, res) => {
 exports.getManagerIds = async (req, res) => {
     try {
         const managers = await Manager.find({}, { managerId: 1, userId: 1, _id: 0 })
-            .populate('userId', 'firstname lastname')
             .sort();
 
-        const managerList = managers.map(manager => ({
-            managerId: manager.managerId,
-            userId: manager.userId._id,
-            firstname: manager.userId.firstname,
-            lastname: manager.userId.lastname
-        }));
+        // Get user details manually for each manager
+        const User = require("../models/userModel.cjs");
+        const managerList = [];
+        
+        for (const manager of managers) {
+            const user = await User.findOne({ userId: manager.userId });
+            if (user) {
+                managerList.push({
+                    managerId: manager.managerId,
+                    userId: manager.userId,
+                    firstname: user.firstname,
+                    lastname: user.lastname
+                });
+            }
+        }
 
         res.json(managerList);
     } catch (e) {
