@@ -2,16 +2,52 @@
 !theme plain
 skinparam linetype ortho
 
+entity User {
+  * _id : ObjectId <<PK>>
+  --
+  * userId : String <<UK>>
+  * firstname : String
+  * lastname : String
+  * email : String <<UK>>
+  * phone : String
+  * address : String
+  * preferredContact : String ["phone"|"email"]
+  * userType : String ["User"|"Instructor"|"Manager"]
+  * createdAt : Date
+  * updatedAt : Date
+}
+
+entity Password {
+  * _id : ObjectId <<PK>>
+  --
+  * userId : String <<UK,FK>>
+  * passwordHash : String
+  * lastChanged : Date
+  * isActive : Boolean
+  * createdAt : Date
+  * updatedAt : Date
+}
+
 entity Instructor {
   * _id : ObjectId <<PK>>
   --
   * instructorId : String <<UK>>
-  * firstName : String
-  * lastName : String
-  * address : String
-  * phone : String
-  * email : String <<UK>>
-  * preferredContact : String
+  * userId : String <<FK>>
+  * specialties : Array[String]
+  * isActive : Boolean
+  * createdAt : Date
+  * updatedAt : Date
+}
+
+entity Manager {
+  * _id : ObjectId <<PK>>
+  --
+  * managerId : String <<UK>>
+  * userId : String <<FK>>
+  * department : String
+  * isActive : Boolean
+  * createdAt : Date
+  * updatedAt : Date
 }
 
 entity Class {
@@ -22,76 +58,85 @@ entity Class {
   * instructorId : String <<FK>>
   * classType : String
   * description : String
+  * capacity : Integer
+  * isActive : Boolean
   * daytime : Array[Object]
     - day : String
     - time : String
     - duration : Integer
+  * registeredUsers : Array[Object]
+    - userId : String
+    - registrationDate : Date
+    - status : String
+  * attendanceRecords : Array[Object]
+    - date : Date
+    - attendees : Array[Object]
+      - userId : String
+      - checkedInAt : Date
+  * createdAt : Date
+  * updatedAt : Date
 }
 
-entity Customer {
+entity Pass {
   * _id : ObjectId <<PK>>
   --
-  * customerId : String <<UK>>
-  * firstName : String
-  * lastName : String
-  * address : String
-  * phone : String
-  * email : String <<UK>>
-  * preferredContact : String
-  * classBalance : Integer
-}
-
-entity Package {
-  * _id : ObjectId <<PK>>
-  --
-  * packageId : String <<UK>>
-  * packageName : String
-  * packageCategory : String
-  * numberOfClasses : Integer
-  * classType : String
-  * startDate : Date
-  * endDate : Date
+  * passId : String <<UK>>
+  * name : String
+  * description : String
+  * duration : Object
+    - value : Integer
+    - unit : String ["days"|"weeks"|"months"]
+  * sessions : Integer
   * price : Number
+  * isActive : Boolean
+  * createdBy : String <<FK>>
+  * createdAt : Date
+  * updatedAt : Date
 }
 
-entity Sale {
+entity UserPass {
   * _id : ObjectId <<PK>>
   --
-  * saleId : String <<UK>>
-  * customerId : String <<FK>>
-  * packageId : String <<FK>>
-  * amountPaid : Number
-  * modeOfPayment : String
-  * dateTime : Date
-  * validityStartDate : Date
-  * validityEndDate : Date
-}
-
-entity Attendance {
-  * _id : ObjectId <<PK>>
-  --
-  * attendanceId : String <<UK>>
-  * classId : String <<FK>>
-  * instructorId : String <<FK>>
-  * date : Date
-  * time : String
-  * customers : Array[String] <<FK>>
+  * userPassId : String <<UK>>
+  * userId : String <<FK>>
+  * passId : String <<FK>>
+  * purchaseDate : Date
+  * startDate : Date
+  * expirationDate : Date
+  * sessionsRemaining : Integer
+  * totalSessions : Integer
+  * isActive : Boolean
+  * purchasePrice : Number
+  * paymentMethod : String
+  * createdAt : Date
+  * updatedAt : Date
 }
 
 ' Relationships
-Instructor ||--o{ Class : "instructorId"
-Class ||--o{ Attendance : "classId"
-Instructor ||--o{ Attendance : "instructorId"
-Customer ||--o{ Sale : "customerId"
-Package ||--o{ Sale : "packageId"
-Customer }o--o{ Attendance : "customers[]"
+User ||--|| Password : "userId"
+User ||--o{ Instructor : "userId"
+User ||--o{ Manager : "userId"
+User ||--o{ UserPass : "userId"
 
-' Cardinality notes
-note top of Instructor : One instructor teaches\nmultiple classes
-note top of Class : Each class has embedded\ndaytime array with\nday, time, duration
-note top of Customer : Customer ID format: C00001\nClass balance tracks remaining classes
-note top of Package : Package types: General/Special\nCategories: General/Senior
-note top of Sale : Links customer to package purchase\nUpdates customer class balance
-note top of Attendance : Many-to-many relationship\nwith customers via array
+Instructor ||--o{ Class : "instructorId"
+Manager ||--o{ Pass : "createdBy"
+
+Pass ||--o{ UserPass : "passId"
+
+Class }o--o{ User : "registeredUsers[].userId"
+Class }o--o{ User : "attendanceRecords[].attendees[].userId"
+
+' ID Format Notes
+note top of User : User ID formats:\nU00001 (User)\nI00001 (Instructor)\nM00001 (Manager)
+note top of Instructor : Instructor ID format:\nINS00001
+note top of Manager : Manager ID format:\nMGR00001
+note top of Class : Class ID format:\nCL00001\nEmbedded arrays for\nregistrations & attendance
+note top of Pass : Pass ID format:\nP00001\nCreated by managers only
+note top of UserPass : UserPass ID format:\nUP00001\nTracks user's pass purchases
+
+' Business Rules
+note bottom of Password : Passwords are hashed with bcrypt\nAuthentication uses JWT tokens
+note bottom of Class : Classes have embedded:\n- Registration records\n- Attendance records\n- Schedule (daytime array)
+note bottom of UserPass : Pass expiration and session\ntracking for user access control
 
 @enduml

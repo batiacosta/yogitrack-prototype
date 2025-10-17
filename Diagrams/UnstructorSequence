@@ -1,22 +1,141 @@
 @startuml
+title Instructor Management Sequence Diagram
+
 actor Manager
-participant "Frontend UI" as UI
-participant "InstructorController" as Controller
+actor Instructor
+participant "React Frontend" as UI
+participant "AuthService" as Auth
+participant "AuthController" as AuthCtrl
+participant "InstructorController" as InstCtrl
+participant "UserController" as UserCtrl
+participant "ClassController" as ClassCtrl
+participant "ReportsController" as ReportCtrl
 participant "MongoDB"
 
+== Instructor Creation (Manager Only) ==
+Manager -> UI : Login as manager
+UI -> Auth : login(email, password)
+Auth -> AuthCtrl : POST /api/auth/login
+AuthCtrl -> MongoDB : Validate manager credentials
+MongoDB --> AuthCtrl : Manager user data
+AuthCtrl --> Auth : JWT token (with Manager role)
+Auth --> UI : Authenticated manager state
+
+Manager -> UI : Navigate to Instructor Manager
+UI -> InstCtrl : GET /api/instructor/getAllInstructors
+InstCtrl -> MongoDB : Fetch instructors with user data
+MongoDB --> InstCtrl : Instructor list
+InstCtrl --> UI : Instructors data
+UI -> Manager : Display instructor list
+
 Manager -> UI : Click "Add New Instructor"
-UI -> Controller : POST /api/instructor/add (instructor data)
-Controller -> MongoDB : Check for duplicate name
-MongoDB --> Controller : Duplicate? (yes/no)
-alt Duplicate found
-    Controller -> UI : Prompt for confirmation
-    UI -> Manager : Show duplicate warning
-    Manager -> UI : Confirm to proceed
+UI -> UserCtrl : GET /api/user/type/Instructor
+UserCtrl -> MongoDB : Fetch users where userType != "Instructor"
+MongoDB --> UserCtrl : Available users
+UserCtrl --> UI : User options
+UI -> Manager : Show create form
+
+Manager -> UI : Fill form & submit
+UI -> AuthCtrl : POST /api/auth/register (with userType="Instructor")
+AuthCtrl -> AuthCtrl : Generate userId (I00001)
+AuthCtrl -> MongoDB : Create User record
+AuthCtrl -> MongoDB : Create Password record
+AuthCtrl -> AuthCtrl : Generate instructorId (INS00001)
+AuthCtrl -> MongoDB : Create Instructor record
+MongoDB --> AuthCtrl : All records created
+AuthCtrl --> UI : Instructor created successfully
+UI -> Manager : Show success message
+
+== Instructor Login & Dashboard ==
+Instructor -> UI : Login with credentials
+UI -> Auth : login(email, password)
+Auth -> AuthCtrl : POST /api/auth/login
+AuthCtrl -> MongoDB : Validate instructor credentials
+MongoDB --> AuthCtrl : Instructor user data
+AuthCtrl --> Auth : JWT token (with instructorId)
+Auth --> UI : Authenticated instructor state
+
+Instructor -> UI : Access dashboard
+UI -> ClassCtrl : GET /api/class/instructor-classes
+ClassCtrl -> ClassCtrl : Extract instructorId from JWT
+ClassCtrl -> MongoDB : Fetch classes by instructorId
+MongoDB --> ClassCtrl : Instructor's classes with students
+ClassCtrl --> UI : Classes and registered users
+UI -> Instructor : Show instructor dashboard
+
+== Attendance Marking ==
+Instructor -> UI : Select class for attendance
+UI -> Instructor : Show registered students
+Instructor -> UI : Mark students present/absent
+UI -> ClassCtrl : POST /api/class/attendance
+note right of ClassCtrl
+  Payload:
+  {
+    classId: "CL00001",
+    date: "2025-10-17",
+    attendees: [
+      {userId: "U00001", checkedInAt: "10:00"},
+      {userId: "U00002", checkedInAt: "10:05"}
+    ]
+  }
+end note
+ClassCtrl -> ClassCtrl : Verify instructor owns class
+ClassCtrl -> MongoDB : Add attendance record to class
+MongoDB --> ClassCtrl : Attendance saved
+ClassCtrl --> UI : Attendance recorded
+UI -> Instructor : Confirmation message
+
+== Manager Views Instructor Performance ==
+Manager -> UI : Navigate to Reports
+UI -> ReportCtrl : GET /api/reports/instructor-performance
+ReportCtrl -> ReportCtrl : Verify manager permissions
+ReportCtrl -> MongoDB : Aggregate instructor data
+note right of MongoDB
+  Calculate for each instructor:
+  - Total classes taught
+  - Total registrations
+  - Total attendance
+  - Attendance rate
+  - Unique students
+end note
+MongoDB --> ReportCtrl : Instructor performance data
+ReportCtrl --> UI : Report data
+UI -> Manager : Display instructor analytics
+
+== Instructor Management (Update/Delete) ==
+Manager -> UI : Select instructor to edit
+UI -> InstCtrl : GET /api/instructor/getInstructor/{instructorId}
+InstCtrl -> MongoDB : Fetch instructor + user data
+MongoDB --> InstCtrl : Complete instructor profile
+InstCtrl --> UI : Instructor details
+UI -> Manager : Show edit form
+
+Manager -> UI : Update details & submit
+UI -> InstCtrl : PUT /api/instructor/update/{instructorId}
+InstCtrl -> MongoDB : Update instructor record
+InstCtrl -> UserCtrl : Update user record
+UserCtrl -> MongoDB : Update user details
+MongoDB --> UserCtrl : User updated
+UserCtrl --> InstCtrl : Update confirmed
+InstCtrl --> UI : Instructor updated
+UI -> Manager : Success message
+
+alt Delete Instructor
+    Manager -> UI : Click delete instructor
+    UI -> Manager : Confirm deletion
+    Manager -> UI : Confirm
+    UI -> InstCtrl : DELETE /api/instructor/{instructorId}
+    InstCtrl -> MongoDB : Check if instructor has active classes
+    alt Has Active Classes
+        MongoDB --> InstCtrl : Active classes found
+        InstCtrl --> UI : Cannot delete - has active classes
+        UI -> Manager : Show error message
+    else No Active Classes
+        InstCtrl -> MongoDB : Soft delete instructor
+        MongoDB --> InstCtrl : Instructor deactivated
+        InstCtrl --> UI : Instructor deleted
+        UI -> Manager : Success message
+    end
 end
-Controller -> Controller : Generate instructorId
-Controller -> Controller : Validate data
-Controller -> MongoDB : Save instructor
-Controller -> Controller : Send confirmation message
-Controller -> UI : Respond with success
-UI -> Manager : Show confirmation
+
 @enduml

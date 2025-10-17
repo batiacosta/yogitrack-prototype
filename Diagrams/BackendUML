@@ -1,24 +1,69 @@
 @startuml
 skinparam classAttributeIconSize 0
 
-' === MODELS ===
-class InstructorModel {
-	+ instructorId : String
+' === CORE MODELS ===
+class UserModel {
+	+ userId : String <<UK>>
 	+ firstname : String
 	+ lastname : String
-	+ address : String
+	+ email : String <<UK>>
 	+ phone : String
-	+ email : String
+	+ address : String
 	+ preferredContact : String
+	+ userType : String ["User"|"Instructor"|"Manager"]
+	+ createdAt : Date
+	+ updatedAt : Date
+	--
+	+ getFullName() : String
+	+ sendWelcomeMessage() : String
+	+ generateUserId(userType) : String <<static>>
+}
+
+class PasswordModel {
+	+ userId : String <<UK>>
+	+ passwordHash : String
+	+ lastChanged : Date
+	+ isActive : Boolean
+	--
+	+ hashPassword(plainPassword) : String <<static>>
+	+ validatePassword(plainPassword) : Boolean
+	+ setPassword(userId, plainPassword) : PasswordModel <<static>>
+	+ deactivatePassword(userId) : PasswordModel <<static>>
+}
+
+class InstructorModel {
+	+ instructorId : String <<UK>>
+	+ userId : String <<FK>>
+	+ specialties : String[]
+	+ isActive : Boolean
+	--
+	+ generateInstructorId() : String <<static>>
+	+ canTeach() : Boolean
+}
+
+class ManagerModel {
+	+ managerId : String <<UK>>
+	+ userId : String <<FK>>
+	+ department : String
+	+ isActive : Boolean
+	--
+	+ generateManagerId() : String <<static>>
+	+ canManage() : Boolean
 }
 
 class ClassModel {
-	+ classId : String
+	+ classId : String <<UK>>
 	+ className : String
-	+ instructorId : String
+	+ instructorId : String <<FK>>
 	+ classType : String
 	+ description : String
+	+ capacity : Number
+	+ isActive : Boolean
 	+ daytime : Daytime[]
+	+ registeredUsers : Registration[]
+	+ attendanceRecords : AttendanceRecord[]
+	--
+	+ getNextClassId() : String <<static>>
 }
 
 class Daytime {
@@ -27,77 +72,160 @@ class Daytime {
 	+ duration : Number
 }
 
-' (Other models like CustomerModel, PackageModel, SaleModel, AttendanceModel can be added similarly)
-
-class CustomerModel {
-	+ customerId : String
-	+ firstname : String
-	+ lastname : String
-	+ address : String
-	+ phone : String
-	+ email : String
-	+ preferredContact : String
-	+ classBalance : Number
+class Registration {
+	+ userId : String
+	+ registrationDate : Date
+	+ status : String
 }
 
-class PackageModel {
-	+ packageId : String
-	+ packageName : String
-	+ packageCategory : String
-	+ numClasses : Number
-	+ classType : String
-	+ startDate : Date
-	+ endDate : Date
-	+ price : Number
-}
-
-class SaleModel {
-	+ saleId : String
-	+ customerId : String
-	+ packageId : String
-	+ amountPaid : Number
-	+ paymentMode : String
-	+ paymentDate : Date
-	+ validityStart : Date
-	+ validityEnd : Date
-}
-
-class AttendanceModel {
-	+ attendanceId : String
-	+ classId : String
-	+ instructorId : String
+class AttendanceRecord {
 	+ date : Date
-	+ time : String
-	+ customerIds : String[]
+	+ attendees : Attendee[]
+}
+
+class Attendee {
+	+ userId : String
+	+ checkedInAt : Date
+}
+
+class PassModel {
+	+ passId : String <<UK>>
+	+ name : String
+	+ description : String
+	+ duration : Object {value, unit}
+	+ sessions : Number
+	+ price : Number
+	+ isActive : Boolean
+	+ createdBy : String <<FK>>
+	--
+	+ getNextPassId() : String <<static>>
+}
+
+class UserPassModel {
+	+ userPassId : String <<UK>>
+	+ userId : String <<FK>>
+	+ passId : String <<FK>>
+	+ purchaseDate : Date
+	+ startDate : Date
+	+ expirationDate : Date
+	+ sessionsRemaining : Number
+	+ totalSessions : Number
+	+ isActive : Boolean
+	+ purchasePrice : Number
+	+ paymentMethod : String
+	--
+	+ isExpired() : Boolean
+	+ isValid() : Boolean
+	+ useSession() : Boolean
+	+ getDaysRemaining() : Number
+	+ getNextUserPassId() : String <<static>>
+	+ getUserActivePasses(userId) : UserPassModel[] <<static>>
+	+ hasValidPass(userId) : Boolean <<static>>
 }
 
 ' === CONTROLLERS ===
+class AuthController {
+	+ register(req, res)
+	+ login(req, res)
+	+ resetPassword(req, res)
+	+ changePassword(req, res)
+	+ getProfile(req, res)
+	+ logout(req, res)
+	+ verifyToken(req, res, next) <<middleware>>
+}
+
+class UserController {
+	+ createUser(req, res)
+	+ getUserById(req, res)
+	+ getUsersByType(req, res)
+	+ updateUser(req, res)
+	+ deleteUser(req, res)
+	+ getAllUsers(req, res)
+}
+
 class InstructorController {
 	+ add(req, res)
 	+ getInstructor(req, res)
 	+ getInstructorIds(req, res)
 	+ getNextId(req, res)
 	+ deleteInstructor(req, res)
+	+ getAllInstructors(req, res)
+}
+
+class ManagerController {
+	+ createManager(req, res)
+	+ getManager(req, res)
+	+ getAllManagers(req, res)
+	+ updateManager(req, res)
+	+ deleteManager(req, res)
 }
 
 class ClassController {
 	+ addClass(req, res)
 	+ listClasses(req, res)
+	+ getClass(req, res)
+	+ updateClass(req, res)
+	+ deleteClass(req, res)
+	+ registerUser(req, res)
+	+ getInstructorClasses(req, res)
+	+ markAttendance(req, res)
 }
 
-' (Other controllers like CustomerController, PackageController, SaleController, AttendanceController can be added similarly)
+class PassController {
+	+ createPass(req, res)
+	+ getAllPasses(req, res)
+	+ getPassById(req, res)
+	+ updatePass(req, res)
+	+ deletePass(req, res)
+}
+
+class UserPassController {
+	+ purchasePass(req, res)
+	+ getUserPasses(req, res)
+	+ getPassById(req, res)
+	+ updatePass(req, res)
+	+ usePassSession(req, res)
+}
+
+class ReportsController {
+	+ getPerformanceReport(req, res)
+	+ getInstructorPerformanceReport(req, res)
+	+ getCustomerAttendanceReport(req, res)
+	+ getGeneralAttendanceReport(req, res)
+}
 
 ' === RELATIONSHIPS ===
-InstructorController --> InstructorModel : uses
-ClassController --> ClassModel : uses
+' Model relationships
+UserModel ||--o{ PasswordModel : authenticated by
+UserModel ||--o{ InstructorModel : can be
+UserModel ||--o{ ManagerModel : can be
+UserModel ||--o{ UserPassModel : purchases
+
+InstructorModel ||--o{ ClassModel : teaches
+ClassModel ||--o{ Registration : has registrations
+ClassModel ||--o{ AttendanceRecord : tracks attendance
 ClassModel --> Daytime : contains
 
-ClassModel "*" -- "1" InstructorModel : taught by
-ClassModel "1" -- "*" AttendanceModel : has
-AttendanceModel "*" -- "1" InstructorModel : marked by
-AttendanceModel "*" -- "*" CustomerModel : for
-SaleModel "*" -- "1" CustomerModel : for
-SaleModel "*" -- "1" PackageModel : for
-CustomerModel "1" -- "*" AttendanceModel : attends
+PassModel ||--o{ UserPassModel : purchased as
+ManagerModel ||--o{ PassModel : creates
+
+' Controller to Model relationships
+AuthController --> UserModel : manages
+AuthController --> PasswordModel : authenticates
+AuthController --> InstructorModel : creates role
+AuthController --> ManagerModel : creates role
+
+UserController --> UserModel : manages
+InstructorController --> InstructorModel : manages
+ManagerController --> ManagerModel : manages
+ClassController --> ClassModel : manages
+PassController --> PassModel : manages
+UserPassController --> UserPassModel : manages
+
+ReportsController --> UserModel : analyzes
+ReportsController --> InstructorModel : analyzes
+ReportsController --> ClassModel : analyzes
+ReportsController --> UserPassModel : analyzes
+ReportsController --> ManagerModel : requires auth
 
 @enduml

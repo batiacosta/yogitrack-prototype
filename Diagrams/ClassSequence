@@ -1,24 +1,105 @@
 @startuml
+title Class Management Sequence Diagram
+
 actor Manager
-participant "Frontend UI" as UI
+actor Instructor
+actor User
+participant "React Frontend" as UI
+participant "AuthService" as Auth
 participant "ClassController" as Controller
+participant "InstructorController" as InstController
 participant "MongoDB"
 
+== Class Creation (Manager Only) ==
+Manager -> UI : Navigate to Class Manager
+UI -> Auth : getToken()
+Auth --> UI : JWT token
+UI -> Controller : GET /api/class/list (with auth token)
+Controller -> MongoDB : Fetch existing classes
+MongoDB --> Controller : Classes data
+Controller --> UI : Classes list
+UI -> Manager : Display classes
+
 Manager -> UI : Click "Add New Class"
-UI -> Controller : POST /api/class/add (class data)
-Controller -> MongoDB : Check for schedule conflict
-MongoDB --> Controller : Conflict? (yes/no)
-alt Conflict found
-    Controller -> Controller : Suggest alternatives
-    Controller -> UI : Return alternatives
-    UI -> Manager : Show alternatives
-    Manager -> UI : Select alternative
-    UI -> Controller : Submit selected option
-end
-Controller -> Controller : Generate classId
-Controller -> Controller : Validate data
-Controller -> MongoDB : Save class
-Controller -> Controller : Send confirmation message
-Controller -> UI : Respond with success
-UI -> Manager : Show confirmation
+UI -> InstController : GET /api/instructor/getInstructorIds
+InstController -> MongoDB : Fetch active instructors
+MongoDB --> InstController : Instructor list
+InstController --> UI : Available instructors
+UI -> Manager : Show create form with instructors
+
+Manager -> UI : Fill form & submit
+UI -> Controller : POST /api/class/add (class data + auth)
+Controller -> Controller : Verify manager permissions
+Controller -> Controller : Generate classId (CL00001)
+Controller -> Controller : Validate data & schedule
+Controller -> MongoDB : Save new class
+MongoDB --> Controller : Success confirmation
+Controller --> UI : Class created successfully
+UI -> Manager : Show success message
+
+== Class Registration (User) ==
+User -> UI : Login to system
+UI -> Auth : login(email, password)
+Auth -> Controller : POST /api/auth/login
+Controller --> Auth : JWT token + user data
+Auth --> UI : Authenticated state
+UI -> User : Show dashboard
+
+User -> UI : Browse available classes
+UI -> Controller : GET /api/class/list (public)
+Controller -> MongoDB : Fetch active classes
+MongoDB --> Controller : Classes with schedules
+Controller --> UI : Available classes
+UI -> User : Display class schedule
+
+User -> UI : Select class to register
+UI -> Controller : POST /api/class/register (classId, userId)
+Controller -> Controller : Check class capacity
+Controller -> Controller : Verify user pass/payment
+Controller -> MongoDB : Add user to registeredUsers[]
+MongoDB --> Controller : Registration confirmed
+Controller --> UI : Registration successful
+UI -> User : Confirmation message
+
+== Attendance Marking (Instructor) ==
+Instructor -> UI : Login as instructor
+UI -> Auth : login(email, password)
+Auth -> Controller : POST /api/auth/login
+Controller --> Auth : JWT token (with instructorId)
+Auth --> UI : Instructor authenticated
+
+Instructor -> UI : View my classes
+UI -> Controller : GET /api/class/instructor-classes
+Controller -> Controller : Filter by instructorId from JWT
+Controller -> MongoDB : Fetch instructor's classes
+MongoDB --> Controller : Classes with registered users
+Controller --> UI : Classes with student lists
+UI -> Instructor : Show classes & students
+
+Instructor -> UI : Select class for attendance
+UI -> Instructor : Show registered students list
+Instructor -> UI : Mark attendance (check students)
+UI -> Controller : POST /api/class/attendance (attendees[])
+Controller -> Controller : Validate instructor permissions
+Controller -> MongoDB : Add attendance record to class
+MongoDB --> Controller : Attendance saved
+Controller --> UI : Attendance recorded
+UI -> Instructor : Confirmation message
+
+== Class Analytics (Manager) ==
+Manager -> UI : Navigate to Reports
+UI -> Controller : GET /api/reports/general-attendance
+Controller -> Controller : Verify manager permissions
+Controller -> MongoDB : Aggregate class data
+note right of MongoDB
+  Calculate:
+  - Class popularity
+  - Attendance rates
+  - Capacity utilization
+  - Class type performance
+end note
+MongoDB --> Controller : Analytics data
+Controller --> UI : Report data
+UI -> Manager : Display class analytics
+
 @enduml

@@ -1,77 +1,269 @@
 @startuml
 skinparam classAttributeIconSize 0
 
-' === FRONTEND JS CLASS DIAGRAM (ACTUAL IMPLEMENTATION) ===
+' === REACT TYPESCRIPT FRONTEND ARCHITECTURE ===
 
-class InstructorFormModule {
-  + setFormForSearch()
-  + setFormForAdd()
-  + clearInstructorForm()
-  + initInstructorDropdown()
-  + addInstructorDropdownListener()
-  + handleAdd()
-  + handleSave()
-  + handleDelete()
+' === MAIN APP COMPONENT ===
+class App {
+  - user : User | null
+  - isAuthenticated : boolean
+  + render() : JSX.Element
 }
 
-class ClassFormModule {
-  + setFormForSearch()
-  + setFormForAdd()
-  + clearClassForm()
-  + initClassDropdown()
-  + addClassDropdownListener()
-  + handleAdd()
-  + handleSave()
-  + handleDelete()
-  + populateInstructorDropdown()
-  + validateSchedule()
+' === AUTHENTICATION COMPONENTS ===
+class Login {
+  - email : string
+  - password : string
+  - isLoading : boolean
+  - error : string
+  - showResetForm : boolean
+  + handleSubmit()
+  + handlePasswordReset()
+  + render() : JSX.Element
 }
 
-class APIService {
-  + getNextInstructorId()
-  + addInstructor(data)
-  + getInstructorIds()
-  + getInstructor(id)
-  + deleteInstructor(id)
-  + getNextClassId()
-  + addClass(data)
-  + getClassIds()
-  + getClass(id)
-  + deleteClass(id)
+class SignUp {
+  - formData : RegisterData
+  - isLoading : boolean
+  - error : string
+  + handleSubmit()
+  + validateForm() : boolean
+  + render() : JSX.Element
 }
 
-class UIUtils {
-  + showAlert(msg)
-  + showError(msg)
-  + showConfirmation(msg)
-  + populateDropdown()
+' === DASHBOARD COMPONENTS ===
+class Dashboard {
+  - activeTab : string
+  - user : User
+  + switchTab(tab: string)
+  + renderQuickActions()
+  + render() : JSX.Element
 }
 
-InstructorFormModule ..> APIService : uses
-InstructorFormModule ..> UIUtils : uses
-ClassFormModule ..> APIService : uses
-ClassFormModule ..> UIUtils : uses
+class InstructorDashboard {
+  - classes : ClassData[]
+  - selectedClass : ClassData | null
+  - attendanceData : AttendanceRecord[]
+  + loadClasses()
+  + markAttendance()
+  + render() : JSX.Element
+}
 
-note right of InstructorFormModule
-  Logic from instructor.js:
-  - Handles instructor add/search/delete
-  - Populates dropdowns
-  - Validates and resets form
+' === MANAGER COMPONENTS ===
+class InstructorManager {
+  - instructors : InstructorData[]
+  - formData : InstructorFormData
+  - isLoading : boolean
+  + createInstructor()
+  + updateInstructor()
+  + deleteInstructor()
+  + render() : JSX.Element
+}
+
+class ClassManager {
+  - classes : ClassData[]
+  - formData : ClassFormData
+  - instructors : InstructorData[]
+  + createClass()
+  + updateClass()
+  + deleteClass()
+  + loadInstructors()
+  + render() : JSX.Element
+}
+
+class ClientManager {
+  - clients : User[]
+  - formData : UserFormData
+  - generatedPassword : string
+  + createClient()
+  + updateClient()
+  + deleteClient()
+  + generateSecurePassword() : string
+  + render() : JSX.Element
+}
+
+class ManagerManager {
+  - managers : ManagerData[]
+  - availableUsers : User[]
+  - formData : ManagerFormData
+  + createManager()
+  + updateManager()
+  + deleteManager()
+  + loadAvailableUsers()
+  + render() : JSX.Element
+}
+
+class PassManager {
+  - passes : PassData[]
+  - formData : PassFormData
+  + createPass()
+  + updatePass()
+  + deletePass()
+  + render() : JSX.Element
+}
+
+class UserPassManager {
+  - userPasses : UserPassData[]
+  - formData : UserPassFormData
+  - users : User[]
+  - passes : PassData[]
+  + purchasePass()
+  + updateUserPass()
+  + loadUsers()
+  + loadPasses()
+  + render() : JSX.Element
+}
+
+class Reports {
+  - activeReportType : string
+  - reportData : ReportData | null
+  - selectedYear : number
+  - selectedMonth : number | null
+  + loadReportData()
+  + renderPerformanceReport()
+  + renderInstructorPerformanceReport()
+  + renderCustomerAttendanceReport()
+  + renderGeneralAttendanceReport()
+  + formatNumber(num) : string
+  + formatCurrency(amount) : string
+  + formatPercentage(value) : string
+  + render() : JSX.Element
+}
+
+' === SERVICES ===
+class AuthService {
+  - baseURL : string
+  + login(email, password) : Promise<LoginResponse>
+  + register(userData) : Promise<LoginResponse>
+  + resetPassword(data) : Promise<void>
+  + logout() : void
+  + getAuthState() : AuthState
+  + getCurrentUser() : User | null
+  + getToken() : string | null
+  + isTokenValid() : boolean
+}
+
+' === INTERFACES/TYPES ===
+interface User {
+  + userId : string
+  + firstname : string
+  + lastname : string
+  + email : string
+  + userType : string
+  + phone? : string
+  + address? : string
+}
+
+interface ReportData {
+  + summary? : SummaryData
+  + monthlyBreakdown? : MonthlyData[]
+  + instructors? : InstructorData[]
+  + customers? : CustomerData[]
+  + classes? : ClassData[]
+  + classTypeStats? : ClassTypeStats
+}
+
+interface ClassTypeStats {
+  + classes : number
+  + totalRegistrations : number
+  + totalAttendance : number
+  + averageAttendanceRate : string
+}
+
+interface ClassData {
+  + classId : string
+  + className : string
+  + classType : string
+  + instructorName : string
+  + capacity : number
+  + totalRegistrations : number
+  + totalAttendance : number
+  + attendanceRate : string
+  + capacityUtilization : string
+}
+
+interface InstructorData {
+  + instructorId : string
+  + name : string
+  + email : string
+  + totalClasses : number
+  + totalRegistrations : number
+  + totalAttendance : number
+  + attendanceRate : string
+  + uniqueStudents : number
+}
+
+interface CustomerData {
+  + userId : string
+  + name : string
+  + email : string
+  + totalScheduled : number
+  + totalAttended : number
+  + attendanceRate : string
+}
+
+interface MonthlyData {
+  + month : string
+  + monthName : string
+  + newUsers : number
+  + packageSales : number
+  + revenue : number
+}
+
+' === RELATIONSHIPS ===
+App --> Login : renders
+App --> SignUp : renders
+App --> Dashboard : renders
+App --> InstructorDashboard : renders
+
+Dashboard --> InstructorManager : renders
+Dashboard --> ClassManager : renders
+Dashboard --> ClientManager : renders
+Dashboard --> ManagerManager : renders
+Dashboard --> PassManager : renders
+Dashboard --> UserPassManager : renders
+Dashboard --> Reports : renders
+
+Login --> AuthService : uses
+SignUp --> AuthService : uses
+InstructorManager --> AuthService : uses
+ClassManager --> AuthService : uses
+ClientManager --> AuthService : uses
+ManagerManager --> AuthService : uses
+PassManager --> AuthService : uses
+UserPassManager --> AuthService : uses
+Reports --> AuthService : uses
+
+Reports --> ReportData : uses
+Reports --> ClassTypeStats : uses
+Reports --> ClassData : uses
+Reports --> InstructorData : uses
+Reports --> CustomerData : uses
+Reports --> MonthlyData : uses
+
+note top of App
+  Main React app with TypeScript
+  State management via React hooks
+  Role-based component rendering
 end note
 
-note right of ClassFormModule
-  Logic from class.js:
-  - Handles class add/search/delete
-  - Populates instructor/class dropdowns
-  - Validates schedule and form
+note top of AuthService
+  Centralized authentication service
+  JWT token management
+  API communication abstraction
 end note
 
-note right of APIService
-  Abstracts fetch calls to backend API endpoints for both Instructor and Class
+note top of Reports
+  Comprehensive business analytics
+  4 report types with data visualization
+  Filtering by year/month
+  Null-safe rendering with fallbacks
 end note
 
-note right of UIUtils
-  Handles UI feedback and dropdown population
+note top of Dashboard
+  Role-based navigation
+  Quick actions for common tasks
+  Tab-based interface
 end note
 
 @enduml

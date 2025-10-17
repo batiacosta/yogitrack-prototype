@@ -1,0 +1,186 @@
+@startuml
+!theme plain
+skinparam packageStyle rectangle
+
+' === SYSTEM ARCHITECTURE OVERVIEW ===
+
+package "Frontend (React TypeScript)" {
+  
+  package "Authentication Layer" {
+    [Login Component]
+    [SignUp Component]
+    [Password Reset]
+    [Auth Service]
+  }
+  
+  package "Dashboard Layer" {
+    [Main Dashboard]
+    [Instructor Dashboard]
+    [Manager Dashboard]
+  }
+  
+  package "Management Components" {
+    [Instructor Manager]
+    [Class Manager]
+    [Client Manager]
+    [Manager Manager]
+    [Pass Manager]
+    [UserPass Manager]
+  }
+  
+  package "Analytics & Reporting" {
+    [Reports Component]
+    [Performance Reports]
+    [Instructor Analytics]
+    [Customer Analytics]
+    [Class Popularity]
+  }
+}
+
+package "Backend (Node.js + Express)" {
+  
+  package "Authentication System" {
+    [Auth Controller]
+    [JWT Middleware]
+    [Password Management]
+  }
+  
+  package "API Controllers" {
+    [User Controller]
+    [Instructor Controller]
+    [Manager Controller]
+    [Class Controller]
+    [Pass Controller]
+    [UserPass Controller]
+    [Reports Controller]
+  }
+  
+  package "Business Logic" {
+    [Role Management]
+    [Class Registration]
+    [Attendance Tracking]
+    [Pass Purchase System]
+    [Analytics Engine]
+  }
+}
+
+package "Data Layer" {
+  database "MongoDB" {
+    [Users Collection]
+    [Passwords Collection]
+    [Instructors Collection]
+    [Managers Collection]
+    [Classes Collection]
+    [Passes Collection]
+    [UserPasses Collection]
+  }
+  
+  folder "JSON Data Files" {
+    [Instructor.json]
+    [Class.json]
+    [Customer.json]
+    [Manager.json]
+    [Package.json]
+    [Sale.json]
+    [Attendance.json]
+  }
+}
+
+cloud "External Services" {
+  [Heroku Deployment]
+  [MongoDB Atlas]
+  [Email/SMS Notifications]
+}
+
+' === USER ROLES ===
+actor "System User" as User
+actor "Yoga Instructor" as Instructor
+actor "Studio Manager" as Manager
+
+' === CONNECTIONS ===
+
+' Frontend to Backend
+[Auth Service] --> [Auth Controller] : HTTPS/REST API
+[Management Components] --> [API Controllers] : HTTPS/REST API
+[Reports Component] --> [Reports Controller] : HTTPS/REST API
+
+' Backend to Data
+[API Controllers] --> [MongoDB] : Mongoose ODM
+[API Controllers] --> [JSON Data Files] : File System
+
+' Authentication Flow
+[Login Component] --> [Auth Service] : User credentials
+[Auth Controller] --> [JWT Middleware] : Token verification
+[JWT Middleware] --> [Password Management] : Password validation
+
+' User Interactions
+User --> [Login Component] : Authentication
+User --> [Main Dashboard] : Access system
+
+Instructor --> [Instructor Dashboard] : Manage classes
+Instructor --> [Class Manager] : View assigned classes
+Instructor --> [Attendance Tracking] : Mark attendance
+
+Manager --> [Manager Dashboard] : Administrative access
+Manager --> [Management Components] : CRUD operations
+Manager --> [Reports Component] : Business analytics
+Manager --> [Pass Purchase System] : Manage packages
+
+' Data Flow
+[Role Management] --> [Users Collection] : User types
+[Class Registration] --> [Classes Collection] : Registration data
+[Attendance Tracking] --> [Classes Collection] : Attendance records
+[Pass Purchase System] --> [UserPasses Collection] : Purchase records
+[Analytics Engine] --> [MongoDB] : Aggregate data
+
+' External Services
+[Backend (Node.js + Express)] --> [Heroku Deployment] : Application hosting
+[MongoDB] --> [MongoDB Atlas] : Database hosting
+[Password Management] --> [Email/SMS Notifications] : Reset notifications
+
+' === SYSTEM FEATURES ===
+note top of "Frontend (React TypeScript)"
+  • Role-based UI components
+  • Real-time form validation
+  • Responsive design with Tailwind CSS
+  • Secure authentication state management
+  • Comprehensive business reports with data visualization
+end note
+
+note top of "Backend (Node.js + Express)"
+  • RESTful API architecture
+  • JWT-based authentication
+  • Role-based access control (RBAC)
+  • Comprehensive business analytics
+  • Password reset with email/phone verification
+end note
+
+note top of "Data Layer"
+  • MongoDB for primary data storage
+  • JSON files for backup/import
+  • Embedded documents for performance
+  • Automatic ID generation
+  • Data integrity constraints
+end note
+
+' === SECURITY FEATURES ===
+note bottom of [Auth Controller]
+  Security Features:
+  • Bcrypt password hashing
+  • JWT token expiration
+  • Role-based permissions
+  • Email/Phone verification
+  • Secure password reset
+end note
+
+' === ANALYTICS FEATURES ===
+note bottom of [Reports Controller]
+  Analytics Features:
+  • Performance metrics
+  • Instructor analytics
+  • Customer attendance tracking
+  • Class popularity analysis
+  • Revenue and sales reporting
+end note
+
+@enduml

@@ -1,24 +1,187 @@
 @startuml
-class Instructor {
-  - instructorId : String
-  - firstname : String
-  - lastname : String
-  - address : String
-  - phone : String
-  - email : String
-  - preferredContact : String
+title Instructor System Architecture
+
+' === MODELS ===
+class UserModel {
+  + userId : String <<UK>>
+  + firstname : String
+  + lastname : String
+  + email : String <<UK>>
+  + phone : String
+  + address : String
+  + preferredContact : String
+  + userType : String ["User"|"Instructor"|"Manager"]
+  --
+  + getFullName() : String
+  + sendWelcomeMessage() : String
+  + generateUserId(userType) : String
+}
+
+class InstructorModel {
+  + instructorId : String <<UK>>
+  + userId : String <<FK>>
+  + specialties : String[]
+  + isActive : Boolean
+  --
+  + generateInstructorId() : String
+  + canTeach() : Boolean
+}
+
+class ClassModel {
+  + classId : String <<UK>>
+  + className : String
+  + instructorId : String <<FK>>
+  + classType : String
+  + description : String
+  + capacity : Number
+  + isActive : Boolean
+  + daytime : Daytime[]
+  + registeredUsers : Registration[]
+  + attendanceRecords : AttendanceRecord[]
+}
+
+class PasswordModel {
+  + userId : String <<UK>>
+  + passwordHash : String
+  + lastChanged : Date
+  + isActive : Boolean
+  --
+  + validatePassword(plainPassword) : Boolean
+  + setPassword(userId, plainPassword) : PasswordModel
+}
+
+' === CONTROLLERS ===
+class AuthController {
+  + register(req, res)
+  + login(req, res)
+  + verifyToken(req, res, next)
+  + resetPassword(req, res)
 }
 
 class InstructorController {
   + add(req, res)
   + getInstructor(req, res)
   + getInstructorIds(req, res)
+  + getAllInstructors(req, res)
   + getNextId(req, res)
   + deleteInstructor(req, res)
 }
 
-class InstructorModel
+class ClassController {
+  + addClass(req, res)
+  + listClasses(req, res)
+  + getInstructorClasses(req, res)
+  + markAttendance(req, res)
+  + registerUser(req, res)
+}
 
-InstructorController --> InstructorModel : uses
-InstructorController --> Instructor : creates
+class ReportsController {
+  + getInstructorPerformanceReport(req, res)
+}
+
+' === FRONTEND COMPONENTS ===
+class InstructorDashboard {
+  - classes : ClassData[]
+  - selectedClass : ClassData | null
+  - attendanceData : AttendanceRecord[]
+  + loadClasses()
+  + markAttendance()
+  + render() : JSX.Element
+}
+
+class InstructorManager {
+  - instructors : InstructorData[]
+  - formData : InstructorFormData
+  - isLoading : boolean
+  + createInstructor()
+  + updateInstructor()
+  + deleteInstructor()
+  + render() : JSX.Element
+}
+
+' === EMBEDDED OBJECTS ===
+class Registration {
+  + userId : String
+  + registrationDate : Date
+  + status : String
+}
+
+class AttendanceRecord {
+  + date : Date
+  + attendees : Attendee[]
+}
+
+class Attendee {
+  + userId : String
+  + checkedInAt : Date
+}
+
+class Daytime {
+  + day : String
+  + time : String
+  + duration : Number
+}
+
+' === RELATIONSHIPS ===
+
+' Model relationships
+UserModel ||--o| InstructorModel : "userId"
+UserModel ||--|| PasswordModel : "userId"
+InstructorModel ||--o{ ClassModel : "instructorId"
+ClassModel --> Registration : contains
+ClassModel --> AttendanceRecord : contains
+ClassModel --> Daytime : contains
+AttendanceRecord --> Attendee : contains
+
+' Controller relationships
+AuthController --> UserModel : creates/authenticates
+AuthController --> InstructorModel : creates role
+AuthController --> PasswordModel : manages
+InstructorController --> InstructorModel : manages
+InstructorController --> UserModel : references
+ClassController --> ClassModel : manages
+ClassController --> InstructorModel : validates permissions
+ReportsController --> InstructorModel : analyzes
+ReportsController --> ClassModel : analyzes performance
+
+' Frontend relationships
+InstructorDashboard --> ClassController : fetches classes
+InstructorDashboard --> AuthController : authentication
+InstructorManager --> InstructorController : CRUD operations
+InstructorManager --> AuthController : authentication
+
+' === INSTRUCTOR WORKFLOW ===
+note top of InstructorModel
+  Instructor Creation Workflow:
+  1. Manager creates User with userType="Instructor"
+  2. System auto-creates InstructorModel record
+  3. Instructor gets login credentials
+  4. Instructor can be assigned to classes
+end note
+
+note top of InstructorDashboard
+  Instructor Dashboard Features:
+  • View assigned classes
+  • See registered students
+  • Mark attendance for classes
+  • View attendance history
+  • Class schedule management
+end note
+
+note top of ClassController
+  Instructor Permissions:
+  • Can only view assigned classes
+  • Can mark attendance for own classes
+  • Cannot create/modify classes
+  • Cannot access other instructors' data
+end note
+
+note bottom of AttendanceRecord
+  Attendance System:
+  • Embedded in Class documents
+  • Tracks date and attendees
+  • Real-time attendance marking
+  • Historical attendance data
+end note
+
 @enduml
