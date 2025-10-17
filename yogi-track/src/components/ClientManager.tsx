@@ -29,6 +29,7 @@ const ClientManager: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [modalMessage, setModalMessage] = useState('');
+  const [generatedPassword, setGeneratedPassword] = useState('');
 
   const [formData, setFormData] = useState<CreateUserData>({
     firstname: '',
@@ -42,6 +43,15 @@ const ClientManager: React.FC = () => {
   useEffect(() => {
     loadClients();
   }, []);
+
+  const generateSecurePassword = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+    let password = '';
+    for (let i = 0; i < 12; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return password;
+  };
 
   const loadClients = async () => {
     try {
@@ -70,6 +80,9 @@ const ClientManager: React.FC = () => {
       setIsLoading(true);
       const token = authService.getToken();
       
+      // Generate a secure random password
+      const tempPassword = generateSecurePassword();
+      
       const response = await fetch(`${window.location.origin}/api/auth/register`, {
         method: 'POST',
         headers: {
@@ -79,7 +92,7 @@ const ClientManager: React.FC = () => {
         body: JSON.stringify({
           ...formData,
           userType: 'User',
-          password: 'defaultPassword123!' // Default password for manager-created clients
+          password: tempPassword
         }),
       });
 
@@ -89,15 +102,12 @@ const ClientManager: React.FC = () => {
       }
 
       const result = await response.json();
-      setModalMessage(`✅ Client created successfully! ID: ${result.userId}`);
+      setGeneratedPassword(tempPassword);
+      setModalMessage(`✅ Client created successfully!`);
       setMessage(`✅ Client created successfully! ID: ${result.userId}`);
       
-      setTimeout(() => {
-        setShowCreateForm(false);
-        setModalMessage('');
-        resetForm();
-        loadClients();
-      }, 2000);
+      // Don't auto-close so manager can copy the password
+      loadClients();
     } catch (err) {
       console.error('Create client error:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to create client';
@@ -202,6 +212,7 @@ const ClientManager: React.FC = () => {
       address: '',
       preferredContact: 'email'
     });
+    setGeneratedPassword('');
   };
 
   const openCreateForm = () => {
@@ -209,6 +220,23 @@ const ClientManager: React.FC = () => {
     setEditingClient(null);
     setModalMessage('');
     setShowCreateForm(true);
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setMessage('📋 Password copied to clipboard!');
+      setTimeout(() => setMessage(''), 2000);
+    }).catch(() => {
+      setMessage('❌ Failed to copy password');
+      setTimeout(() => setMessage(''), 2000);
+    });
+  };
+
+  const closeModal = () => {
+    setShowCreateForm(false);
+    setModalMessage('');
+    setEditingClient(null);
+    resetForm();
   };
 
   const openEditForm = (client: UserData) => {
@@ -409,7 +437,32 @@ const ClientManager: React.FC = () => {
                     ? 'bg-green-100 text-green-700 border border-green-200'
                     : 'bg-red-100 text-red-700 border border-red-200'
                 }`}>
-                  {modalMessage}
+                  {generatedPassword ? (
+                    <div>
+                      <div className="font-medium mb-2">✅ Client created successfully!</div>
+                      <div className="bg-white p-3 rounded border mb-3">
+                        <div className="mb-2"><strong>📧 Email:</strong> {formData.email}</div>
+                        <div className="mb-2 flex items-center justify-between">
+                          <span><strong>🔑 Temporary Password:</strong></span>
+                          <button
+                            onClick={() => copyToClipboard(generatedPassword)}
+                            className="ml-2 px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600"
+                            title="Copy password"
+                          >
+                            📋 Copy
+                          </button>
+                        </div>
+                        <div className="bg-gray-100 p-2 rounded font-mono text-sm break-all">
+                          {generatedPassword}
+                        </div>
+                      </div>
+                      <div className="text-sm text-amber-700 bg-amber-50 p-2 rounded">
+                        ⚠️ <strong>IMPORTANT:</strong> Please share these credentials securely with the client. They should change their password after first login.
+                      </div>
+                    </div>
+                  ) : (
+                    modalMessage
+                  )}
                 </div>
               )}
 
@@ -417,22 +470,23 @@ const ClientManager: React.FC = () => {
               <div className="flex space-x-3 pt-4">
                 <button
                   type="button"
-                  onClick={() => {
-                    setShowCreateForm(false);
-                    setModalMessage('');
-                    setEditingClient(null);
-                  }}
+                  onClick={closeModal}
                   className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors duration-200"
                 >
-                  Cancel
+                  {generatedPassword ? 'Close' : 'Cancel'}
                 </button>
-                <button
-                  onClick={editingClient ? handleEditClient : handleCreateClient}
-                  disabled={isLoading || !formData.firstname || !formData.lastname || !formData.email}
-                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200"
-                >
-                  {isLoading ? (editingClient ? 'Updating...' : 'Creating...') : (editingClient ? 'Update Client' : 'Create Client')}
-                </button>
+                {!generatedPassword && (
+                  <button
+                    onClick={editingClient ? handleEditClient : handleCreateClient}
+                    disabled={isLoading || !formData.firstname || !formData.lastname || !formData.email}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200"
+                  >
+                    {isLoading 
+                      ? (editingClient ? 'Updating...' : 'Creating...') 
+                      : (editingClient ? 'Update Client' : 'Create Client')
+                    }
+                  </button>
+                )}
               </div>
             </div>
           </div>
