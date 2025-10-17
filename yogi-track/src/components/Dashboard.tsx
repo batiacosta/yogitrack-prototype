@@ -3,6 +3,7 @@ import type { User } from '../services/authService';
 import PassList from './PassList';
 import UserPasses from './UserPasses';
 import CreatePassForm from './CreatePassForm';
+import AttendanceManager from './AttendanceManager';
 
 interface DashboardProps {
   user: User;
@@ -55,6 +56,8 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
     { id: 'overview', name: 'Overview', icon: '📊' },
     ...(user.userType === 'Manager' ? [
       { id: 'passes', name: 'Manage Passes', icon: '🎫' }
+    ] : user.userType === 'Instructor' ? [
+      { id: 'attendance', name: 'Attendance', icon: '📋' }
     ] : [
       { id: 'passes', name: 'Browse Passes', icon: '🎫' },
       { id: 'my-passes', name: 'My Passes', icon: '📋' }
@@ -173,7 +176,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
                         <div className="mt-4">
                           <p className="text-sm text-gray-600">
                             {user.userType === 'Manager' && 'You have full management access to instructors, classes, and passes.'}
-                            {user.userType === 'Instructor' && 'You can manage your classes and view schedules.'}
+                            {user.userType === 'Instructor' && 'You can manage your classes, take attendance, and view schedules.'}
                             {user.userType === 'User' && 'You can purchase passes and book classes.'}
                           </p>
                         </div>
@@ -270,6 +273,10 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
 
           {activeTab === 'my-passes' && user.userType !== 'Manager' && (
             <UserPasses key={refreshTrigger} />
+          )}
+
+          {activeTab === 'attendance' && user.userType === 'Instructor' && (
+            <AttendanceManager />
           )}
         </div>
       </main>
