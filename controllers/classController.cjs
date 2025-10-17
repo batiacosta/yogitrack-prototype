@@ -423,3 +423,41 @@ exports.deleteClass = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
+
+// Get user's class registrations
+exports.getUserRegistrations = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    
+    // Find all classes where the user is registered
+    const classes = await Class.find({
+      'registeredUsers.userId': userId
+    }).sort({ 'registeredUsers.registrationDate': -1 });
+
+    // Extract user's registrations with class details
+    const userRegistrations = [];
+    
+    classes.forEach(classDoc => {
+      const userReg = classDoc.registeredUsers.find(reg => reg.userId === userId);
+      if (userReg) {
+        userRegistrations.push({
+          classId: classDoc.classId,
+          className: classDoc.className,
+          instructorId: classDoc.instructorId,
+          classType: classDoc.classType,
+          description: classDoc.description,
+          daytime: classDoc.daytime,
+          registrationDate: userReg.registrationDate,
+          userPassId: userReg.userPassId,
+          attended: classDoc.attendanceRecords.some(
+            att => att.attendees.some(attendee => attendee.userId === userId)
+          )
+        });
+      }
+    });
+
+    res.json(userRegistrations);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};

@@ -16,7 +16,27 @@ interface ClassData {
   }>;
   capacity: number;
   isActive: boolean;
-  registeredUsers?: string[];
+  registeredUsers?: Array<{
+    userId: string;
+    registrationDate: string;
+    userPassId: string;
+  }>;
+}
+
+interface UserRegistration {
+  classId: string;
+  className: string;
+  instructorId: string;
+  classType: string;
+  description: string;
+  daytime: Array<{
+    day: string;
+    time: string;
+    duration: number;
+  }>;
+  registrationDate: string;
+  userPassId: string;
+  attended?: boolean;
 }
 
 interface ClassSchedulerProps {
@@ -27,17 +47,83 @@ interface ClassSchedulerProps {
 const ClassScheduler: React.FC<ClassSchedulerProps> = ({ onNeedPass, onClassScheduled }) => {
   const [classes, setClasses] = useState<ClassData[]>([]);
   const [userPasses, setUserPasses] = useState<UserPassData[]>([]);
+  const [myScheduledClasses, setMyScheduledClasses] = useState<UserRegistration[]>([]);
+  const [myPastClasses, setMyPastClasses] = useState<UserRegistration[]>([]);
   const [selectedPass, setSelectedPass] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [selectedClass, setSelectedClass] = useState<ClassData | null>(null);
+  const [activeTab, setActiveTab] = useState<'schedule' | 'my-classes'>('schedule');
 
   useEffect(() => {
+    const loadData = async () => {
+      try {
+        setIsLoading(true);
+        
+        // Load available classes
+        const classesResponse = await fetch(`${window.location.origin}/api/class/list`);
+        if (classesResponse.ok) {
+          const classesData = await classesResponse.json();
+          setClasses(classesData.filter((cls: ClassData) => cls.isActive));
+        }
+        
+        // Load user's active passes
+        const activePasses = await passService.getUserActivePasses();
+        setUserPasses(activePasses);
+        
+        if (activePasses.length > 0) {
+          setSelectedPass(activePasses[0].userPassId); // Auto-select first active pass
+        }
+
+        // Load user's scheduled classes
+        await loadMyClasses();
+      } catch (err) {
+        console.error('Error loading data:', err);
+        setMessage('Failed to load class schedule data');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    const loadMyClasses = async () => {
+      try {
+        const token = authService.getToken();
+        const response = await fetch(`${window.location.origin}/api/class/user/my-registrations`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const registrations = await response.json();
+          const now = new Date();
+          
+          // Separate upcoming and past classes
+          const upcoming: UserRegistration[] = [];
+          const past: UserRegistration[] = [];
+          
+        registrations.forEach((reg: UserRegistration) => {
+          // For simplicity, we'll consider all registrations as upcoming for now
+          // In a real app, you'd compare with actual class dates
+          const regDate = new Date(reg.registrationDate);
+          if (regDate.getTime() > now.getTime() - 24 * 60 * 60 * 1000) { // Within last 24 hours = upcoming
+            upcoming.push(reg);
+          } else {
+            past.push(reg);
+          }
+        });          setMyScheduledClasses(upcoming);
+          setMyPastClasses(past);
+        }
+      } catch (err) {
+        console.error('Error loading user classes:', err);
+      }
+    };
+
     loadData();
   }, []);
 
-  const loadData = async () => {
+  const refreshData = async () => {
     try {
       setIsLoading(true);
       
@@ -53,11 +139,38 @@ const ClassScheduler: React.FC<ClassSchedulerProps> = ({ onNeedPass, onClassSche
       setUserPasses(activePasses);
       
       if (activePasses.length > 0) {
-        setSelectedPass(activePasses[0].userPassId); // Auto-select first active pass
+        setSelectedPass(activePasses[0].userPassId);
+      }
+
+      // Load user's scheduled classes
+      const token = authService.getToken();
+      const response = await fetch(`${window.location.origin}/api/class/user/my-registrations`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const registrations = await response.json();
+        const now = new Date();
+        
+        const upcoming: UserRegistration[] = [];
+        const past: UserRegistration[] = [];
+        
+        registrations.forEach((reg: UserRegistration) => {
+          const regDate = new Date(reg.registrationDate);
+          if (regDate.getTime() > now.getTime() - 24 * 60 * 60 * 1000) {
+            upcoming.push(reg);
+          } else {
+            past.push(reg);
+          }
+        });
+        
+        setMyScheduledClasses(upcoming);
+        setMyPastClasses(past);
       }
     } catch (err) {
-      console.error('Error loading data:', err);
-      setMessage('Failed to load class schedule data');
+      console.error('Error refreshing data:', err);
     } finally {
       setIsLoading(false);
     }
@@ -104,7 +217,7 @@ const ClassScheduler: React.FC<ClassSchedulerProps> = ({ onNeedPass, onClassSche
       setMessage(`✅ Successfully scheduled for ${selectedClass.className}!`);
       setShowScheduleModal(false);
       setSelectedClass(null);
-      loadData(); // Refresh local data
+      refreshData(); // Refresh local data
       onClassScheduled(); // Trigger refresh of pass data in parent components
     } catch (err) {
       console.error('Schedule error:', err);
@@ -135,10 +248,36 @@ const ClassScheduler: React.FC<ClassSchedulerProps> = ({ onNeedPass, onClassSche
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold text-gray-900">📅 Schedule a Class</h2>
+        <h2 className="text-2xl font-bold text-gray-900">📅 Class Management</h2>
         <p className="text-gray-600 mt-2">
-          Book your spot in available yoga classes
+          Schedule new classes or view your booked sessions
         </p>
+      </div>
+
+      {/* Tab Navigation */}
+      <div className="border-b border-gray-200">
+        <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+          <button
+            onClick={() => setActiveTab('schedule')}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'schedule'
+                ? 'border-emerald-500 text-emerald-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            📝 Schedule New Class
+          </button>
+          <button
+            onClick={() => setActiveTab('my-classes')}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'my-classes'
+                ? 'border-emerald-500 text-emerald-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            📚 My Scheduled Classes ({myScheduledClasses.length})
+          </button>
+        </nav>
       </div>
 
       {message && (
@@ -151,8 +290,11 @@ const ClassScheduler: React.FC<ClassSchedulerProps> = ({ onNeedPass, onClassSche
         </div>
       )}
 
-      {/* Pass Status */}
-      <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-4">
+      {/* Schedule New Class Tab */}
+      {activeTab === 'schedule' && (
+        <div className="space-y-6">
+          {/* Pass Status */}
+          <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-4">
         <h3 className="text-lg font-semibold text-gray-900 mb-3">Your Active Passes</h3>
         {userPasses.length > 0 ? (
           <div className="space-y-2">
@@ -334,6 +476,92 @@ const ClassScheduler: React.FC<ClassSchedulerProps> = ({ onNeedPass, onClassSche
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+        </div>
+      )}
+
+      {/* My Scheduled Classes Tab */}
+      {activeTab === 'my-classes' && (
+        <div className="space-y-6">
+          {/* Upcoming Classes */}
+          <div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">🕐 Upcoming Classes</h3>
+            {myScheduledClasses.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {myScheduledClasses.map((registration, index) => (
+                  <div key={`${registration.classId}-${index}`} className="bg-white rounded-lg shadow-lg border border-gray-200">
+                    <div className="p-6">
+                      <div className="flex justify-between items-start mb-3">
+                        <h4 className="text-lg font-semibold text-gray-900">{registration.className}</h4>
+                        <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-800">
+                          Registered
+                        </span>
+                      </div>
+                      
+                      <div className="space-y-2 text-sm text-gray-600 mb-4">
+                        <div><strong>Type:</strong> {registration.classType}</div>
+                        <div><strong>Instructor:</strong> {registration.instructorId}</div>
+                        <div><strong>Schedule:</strong> {formatSchedule(registration.daytime)}</div>
+                        <div><strong>Registered:</strong> {new Date(registration.registrationDate).toLocaleDateString()}</div>
+                        {registration.description && (
+                          <div><strong>Description:</strong> {registration.description}</div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 bg-white rounded-lg shadow-lg border border-gray-200">
+                <p className="text-gray-600 text-lg">No upcoming classes scheduled</p>
+                <p className="text-gray-500 text-sm mt-2">Schedule your first class to get started!</p>
+                <button
+                  onClick={() => setActiveTab('schedule')}
+                  className="mt-4 bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200"
+                >
+                  📝 Schedule a Class
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Past Classes */}
+          <div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">📚 Past Classes</h3>
+            {myPastClasses.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {myPastClasses.map((registration, index) => (
+                  <div key={`${registration.classId}-${index}`} className="bg-white rounded-lg shadow-lg border border-gray-200 opacity-75">
+                    <div className="p-6">
+                      <div className="flex justify-between items-start mb-3">
+                        <h4 className="text-lg font-semibold text-gray-900">{registration.className}</h4>
+                        <span className={`text-xs px-2 py-1 rounded-full ${
+                          registration.attended 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {registration.attended ? 'Attended' : 'Completed'}
+                        </span>
+                      </div>
+                      
+                      <div className="space-y-2 text-sm text-gray-600">
+                        <div><strong>Type:</strong> {registration.classType}</div>
+                        <div><strong>Instructor:</strong> {registration.instructorId}</div>
+                        <div><strong>Schedule:</strong> {formatSchedule(registration.daytime)}</div>
+                        <div><strong>Registered:</strong> {new Date(registration.registrationDate).toLocaleDateString()}</div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 bg-white rounded-lg shadow-lg border border-gray-200">
+                <p className="text-gray-600 text-lg">No past classes found</p>
+                <p className="text-gray-500 text-sm mt-2">Your completed classes will appear here</p>
+              </div>
+            )}
           </div>
         </div>
       )}

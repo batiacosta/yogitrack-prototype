@@ -17,4 +17,7 @@ router.get("/instructor/my-classes", verifyToken, classController.getInstructorC
 router.post("/attendance/:classId", verifyToken, classController.markAttendance);
 router.get("/attendance/:classId", verifyToken, classController.getAttendance);
 
+// User routes
+router.get("/user/my-registrations", verifyToken, classController.getUserRegistrations);
+
 module.exports = router;
