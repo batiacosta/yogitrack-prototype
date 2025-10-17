@@ -6,6 +6,8 @@ import CreatePassForm from './CreatePassForm';
 import AttendanceManager from './AttendanceManager';
 import ClassManager from './ClassManager';
 import ClassScheduler from './ClassScheduler';
+import InstructorManager from './InstructorManager';
+import ClientManager from './ClientManager';
 
 interface DashboardProps {
   user: User;
@@ -59,7 +61,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
     { id: 'overview', name: 'Overview', icon: '📊' },
     ...(user.userType === 'Manager' ? [
       { id: 'passes', name: 'Manage Passes', icon: '🎫' },
-      { id: 'classes', name: 'Manage Classes', icon: '🧘‍♀️' }
+      { id: 'classes', name: 'Manage Classes', icon: '🧘‍♀️' },
+      { id: 'instructors', name: 'Manage Instructors', icon: '👨‍🏫' },
+      { id: 'clients', name: 'Manage Clients', icon: '👥' }
     ] : user.userType === 'Instructor' ? [
       { id: 'attendance', name: 'Attendance', icon: '📋' },
       { id: 'classes', name: 'My Classes', icon: '🧘‍♀️' }
@@ -296,6 +300,14 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
 
           {activeTab === 'classes' && (user.userType === 'Instructor' || user.userType === 'Manager') && (
             <ClassManager userType={user.userType} />
+          )}
+
+          {activeTab === 'instructors' && user.userType === 'Manager' && (
+            <InstructorManager />
+          )}
+
+          {activeTab === 'clients' && user.userType === 'Manager' && (
+            <ClientManager />
           )}
 
           {activeTab === 'schedule' && user.userType === 'User' && (
