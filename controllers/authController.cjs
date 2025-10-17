@@ -10,6 +10,12 @@ const JWT_SECRET = process.env.JWT_SECRET || "yoga-track-secret-key-2025";
 // Register user with password
 exports.register = async (req, res) => {
     try {
+        console.log('Registration attempt:', { 
+            body: req.body, 
+            env: process.env.NODE_ENV,
+            mongoUri: process.env.MONGO_URI ? 'Set' : 'Not set'
+        });
+        
         const {
             firstname,
             lastname,
@@ -119,6 +125,12 @@ exports.register = async (req, res) => {
 // Login user
 exports.login = async (req, res) => {
     try {
+        console.log('Login attempt:', { 
+            body: req.body,
+            env: process.env.NODE_ENV,
+            jwtSecret: process.env.JWT_SECRET ? 'Set' : 'Using default'
+        });
+        
         const { email, password } = req.body;
 
         // Validate input

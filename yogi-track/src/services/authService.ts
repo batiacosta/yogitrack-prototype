@@ -22,7 +22,7 @@ export interface AuthState {
 }
 
 class AuthService {
-  private baseURL = 'http://localhost:8080/api/auth';
+  private baseURL = `${window.location.origin}/api/auth`;
 
   // Login method
   async login(email: string, password: string): Promise<LoginResponse> {

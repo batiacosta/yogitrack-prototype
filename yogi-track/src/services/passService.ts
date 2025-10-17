@@ -42,7 +42,7 @@ export interface CreatePassData {
 }
 
 class PassService {
-  private baseURL = 'http://localhost:8080/api/pass';
+  private baseURL = `${window.location.origin}/api/pass`;
 
   // Get auth token from localStorage
   private getAuthHeaders() {
