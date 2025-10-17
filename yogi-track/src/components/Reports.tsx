@@ -117,43 +117,54 @@ interface ClassTypeStats {
   classes: number;
   totalRegistrations: number;
   totalAttendance: number;
-  averageAttendanceRate: number;
+  averageAttendanceRate: string; // Backend returns string with .toFixed(1)
 }
 
 interface ClassData {
-  _id: string;
-  name: string;
-  type: string;
-  instructor: {
-    name: string;
-  };
-  registrations: number;
-  attendance: number;
-  attendanceRate: number;
+  classId: string;
+  className: string;
+  classType: string;
+  instructorId: string;
+  instructorName: string;
+  capacity: number;
+  totalRegistrations: number;
+  totalAttendance: number;
+  attendanceRate: string; // Backend returns string with .toFixed(1)
+  capacityUtilization: string; // Backend returns string with .toFixed(1)
+  sessionCount: number;
+  averageAttendancePerSession: string;
 }
 
 interface MonthlyData {
   month: string;
+  monthName: string;
   classes: number;
   attendance: number;
   registrations: number;
+  newUsers: number;
+  packageSales: number;
+  revenue: number;
 }
 
 interface InstructorData {
-  _id: string;
+  instructorId: string;
   name: string;
   email: string;
-  classes: number;
+  totalClasses: number;
+  totalRegistrations: number;
   totalAttendance: number;
-  averageAttendanceRate: number;
+  attendanceRate: string; // Backend returns string with .toFixed(1)
+  uniqueStudents: number;
 }
 
 interface CustomerData {
-  _id: string;
+  userId: string;
   name: string;
   email: string;
+  totalScheduled: number;
+  totalAttended: number;
+  attendanceRate: string;
   classesAttended: number;
-  attendanceRate: number;
 }
 
 // Helper function to format percentage
@@ -331,7 +342,7 @@ const formatPercentage = (value: number): string => {
                     </div>
                     <div className="text-right">
                       <div className="text-sm text-gray-600">Attendance Rate</div>
-                      <div className="text-lg font-bold text-emerald-600">{formatPercentage(instructor.attendanceRate)}</div>
+                      <div className="text-lg font-bold text-emerald-600">{instructor.attendanceRate}%</div>
                     </div>
                   </div>
                   
@@ -454,7 +465,7 @@ const formatPercentage = (value: number): string => {
                           parseFloat(customer.attendanceRate) >= 60 ? 'bg-yellow-100 text-yellow-800' :
                           'bg-red-100 text-red-800'
                         }`}>
-                          {formatPercentage(customer.attendanceRate)}
+                          {customer.attendanceRate}%
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -535,14 +546,14 @@ const formatPercentage = (value: number): string => {
           <div className="p-6">
             {reportData.classTypeStats && Object.keys(reportData.classTypeStats).length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {Object.entries(reportData.classTypeStats).map(([type, stats]: [string, ClassTypeStats]) => (
+                {Object.entries(reportData.classTypeStats as Record<string, ClassTypeStats>).map(([type, stats]) => (
                   <div key={type} className="border border-gray-200 rounded-lg p-4">
                     <h4 className="font-semibold text-gray-900 mb-2">{type}</h4>
                     <div className="space-y-1 text-sm">
                       <div><span className="text-gray-600">Classes:</span> <span className="font-medium">{stats.classes}</span></div>
                       <div><span className="text-gray-600">Registrations:</span> <span className="font-medium">{stats.totalRegistrations}</span></div>
                       <div><span className="text-gray-600">Attendance:</span> <span className="font-medium">{stats.totalAttendance}</span></div>
-                      <div><span className="text-gray-600">Rate:</span> <span className="font-medium">{formatPercentage(stats.averageAttendanceRate)}</span></div>
+                      <div><span className="text-gray-600">Rate:</span> <span className="font-medium">{stats.averageAttendanceRate}%</span></div>
                     </div>
                   </div>
                 ))}
@@ -599,11 +610,11 @@ const formatPercentage = (value: number): string => {
                           parseFloat(classData.attendanceRate) >= 60 ? 'bg-yellow-100 text-yellow-800' :
                           'bg-red-100 text-red-800'
                         }`}>
-                          {formatPercentage(classData.attendanceRate)}
+                          {classData.attendanceRate}%
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {formatPercentage(classData.capacityUtilization)}
+                        {classData.capacityUtilization}%
                       </td>
                     </tr>
                   ))}
