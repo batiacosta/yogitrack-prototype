@@ -169,12 +169,24 @@ exports.login = async (req, res) => {
         }
 
         // Generate JWT token
+        let tokenPayload = { 
+            userId: user.userId,
+            email: user.email,
+            userType: user.userType,
+            role: user.userType // Add role field that backend expects
+        };
+
+        // For instructors, add instructorId to token
+        if (user.userType === 'Instructor') {
+            const Instructor = require('../models/instructorModel.cjs');
+            const instructorRecord = await Instructor.findOne({ userId: user.userId });
+            if (instructorRecord) {
+                tokenPayload.instructorId = instructorRecord.instructorId;
+            }
+        }
+
         const token = jwt.sign(
-            { 
-                userId: user.userId,
-                email: user.email,
-                userType: user.userType
-            },
+            tokenPayload,
             JWT_SECRET,
             { expiresIn: '24h' }
         );

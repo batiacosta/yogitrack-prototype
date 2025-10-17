@@ -125,6 +125,10 @@ const ClassManager: React.FC<ClassManagerProps> = ({ userType }) => {
       setIsLoading(true);
       const token = authService.getToken();
       
+      // Debug logging
+      console.log('Creating class with formData:', formData);
+      console.log('User type:', userType);
+      
       const response = await fetch(`${window.location.origin}/api/class/add`, {
         method: 'POST',
         headers: {
@@ -136,6 +140,7 @@ const ClassManager: React.FC<ClassManagerProps> = ({ userType }) => {
 
       if (!response.ok) {
         const errorData = await response.json();
+        console.error('Error response:', errorData);
         throw new Error(errorData.message || 'Failed to create class');
       }
 
@@ -145,6 +150,7 @@ const ClassManager: React.FC<ClassManagerProps> = ({ userType }) => {
       resetForm();
       window.location.reload(); // Refresh to update class list
     } catch (err) {
+      console.error('Create class error:', err);
       setMessage(err instanceof Error ? err.message : 'Failed to create class');
     } finally {
       setIsLoading(false);
@@ -528,7 +534,7 @@ const ClassManager: React.FC<ClassManagerProps> = ({ userType }) => {
                 </button>
                 <button
                   onClick={editingClass ? handleEditClass : handleCreateClass}
-                  disabled={isLoading || !formData.className || !formData.classType || formData.daytime.length === 0}
+                  disabled={isLoading || !formData.className || !formData.classType || formData.daytime.length === 0 || (isManager && !formData.instructorId)}
                   className="flex-1 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200"
                 >
                   {isLoading ? (
