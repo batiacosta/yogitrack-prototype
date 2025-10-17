@@ -24,6 +24,23 @@ interface InstructorData {
   isActive: boolean;
 }
 
+interface FullInstructorData {
+  instructorId: string;
+  userId: {
+    _id: string;
+    firstname: string;
+    lastname: string;
+    email: string;
+    phone: string;
+    address: string;
+    userType: string;
+  };
+  classIds: string[];
+  specializations: string[];
+  hireDate: string;
+  isActive: boolean;
+}
+
 interface CreateInstructorData {
   userId: string;
   specializations: string[];
@@ -45,7 +62,7 @@ const InstructorManager: React.FC = () => {
   const [instructors, setInstructors] = useState<InstructorData[]>([]);
   const [availableUsers, setAvailableUsers] = useState<UserData[]>([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [editingInstructor, setEditingInstructor] = useState<InstructorData | null>(null);
+  const [editingInstructor, setEditingInstructor] = useState<FullInstructorData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [modalMessage, setModalMessage] = useState('');
@@ -242,7 +259,7 @@ const InstructorManager: React.FC = () => {
       const token = authService.getToken();
       
       // Update both User data and Instructor data
-      const userUpdateResponse = await fetch(`${window.location.origin}/api/user/update/${editingInstructor.userId}`, {
+      const userUpdateResponse = await fetch(`${window.location.origin}/api/user/update/${editingInstructor.userId._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -340,7 +357,7 @@ const InstructorManager: React.FC = () => {
       });
 
       if (response.ok) {
-        const fullInstructor = await response.json();
+        const fullInstructor: FullInstructorData = await response.json();
         
         setEditFormData({
           firstname: fullInstructor.userId.firstname || '',
