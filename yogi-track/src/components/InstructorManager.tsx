@@ -30,10 +30,22 @@ interface CreateInstructorData {
   hireDate: string;
 }
 
+interface EditInstructorData {
+  firstname: string;
+  lastname: string;
+  email: string;
+  phone: string;
+  address: string;
+  specializations: string[];
+  hireDate: string;
+  isActive: boolean;
+}
+
 const InstructorManager: React.FC = () => {
   const [instructors, setInstructors] = useState<InstructorData[]>([]);
   const [availableUsers, setAvailableUsers] = useState<UserData[]>([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [editingInstructor, setEditingInstructor] = useState<InstructorData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [modalMessage, setModalMessage] = useState('');
@@ -42,6 +54,17 @@ const InstructorManager: React.FC = () => {
     userId: '',
     specializations: [],
     hireDate: new Date().toISOString().split('T')[0]
+  });
+
+  const [editFormData, setEditFormData] = useState<EditInstructorData>({
+    firstname: '',
+    lastname: '',
+    email: '',
+    phone: '',
+    address: '',
+    specializations: [],
+    hireDate: '',
+    isActive: true
   });
 
   useEffect(() => {
@@ -211,12 +234,138 @@ const InstructorManager: React.FC = () => {
     }
   };
 
+  const handleEditInstructor = async () => {
+    if (!editingInstructor) return;
+
+    try {
+      setIsLoading(true);
+      const token = authService.getToken();
+      
+      // Update both User data and Instructor data
+      const userUpdateResponse = await fetch(`${window.location.origin}/api/user/update/${editingInstructor.userId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          firstname: editFormData.firstname,
+          lastname: editFormData.lastname,
+          email: editFormData.email,
+          phone: editFormData.phone,
+          address: editFormData.address
+        }),
+      });
+
+      if (!userUpdateResponse.ok) {
+        const errorData = await userUpdateResponse.json();
+        throw new Error(errorData.message || 'Failed to update user data');
+      }
+
+      // Update Instructor-specific data
+      const instructorUpdateResponse = await fetch(`${window.location.origin}/api/manager/instructor/update/${editingInstructor.instructorId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          specializations: editFormData.specializations,
+          hireDate: editFormData.hireDate,
+          isActive: editFormData.isActive
+        }),
+      });
+
+      if (!instructorUpdateResponse.ok) {
+        const errorData = await instructorUpdateResponse.json();
+        throw new Error(errorData.message || 'Failed to update instructor data');
+      }
+
+      setModalMessage('✅ Instructor updated successfully!');
+      setMessage('✅ Instructor updated successfully!');
+      
+      setTimeout(() => {
+        setShowCreateForm(false);
+        setModalMessage('');
+        setEditingInstructor(null);
+        resetEditForm();
+        loadData();
+      }, 2000);
+    } catch (err) {
+      console.error('Update instructor error:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update instructor';
+      setModalMessage(errorMessage);
+      setMessage(errorMessage);
+      
+      setTimeout(() => {
+        setModalMessage('');
+        setMessage('');
+      }, 3000);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const resetForm = () => {
     setFormData({
       userId: '',
       specializations: [],
       hireDate: new Date().toISOString().split('T')[0]
     });
+  };
+
+  const resetEditForm = () => {
+    setEditFormData({
+      firstname: '',
+      lastname: '',
+      email: '',
+      phone: '',
+      address: '',
+      specializations: [],
+      hireDate: '',
+      isActive: true
+    });
+  };
+
+  const openEditForm = async (instructor: InstructorData) => {
+    try {
+      setIsLoading(true);
+      const token = authService.getToken();
+      
+      // Get full instructor details
+      const response = await fetch(`${window.location.origin}/api/instructor/getInstructor?instructorId=${instructor.instructorId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const fullInstructor = await response.json();
+        
+        setEditFormData({
+          firstname: fullInstructor.userId.firstname || '',
+          lastname: fullInstructor.userId.lastname || '',
+          email: fullInstructor.userId.email || '',
+          phone: fullInstructor.userId.phone || '',
+          address: fullInstructor.userId.address || '',
+          specializations: fullInstructor.specializations || [],
+          hireDate: fullInstructor.hireDate ? fullInstructor.hireDate.split('T')[0] : '',
+          isActive: fullInstructor.isActive
+        });
+        
+        setEditingInstructor(fullInstructor);
+        setModalMessage('');
+        setShowCreateForm(true);
+      } else {
+        throw new Error('Failed to load instructor details');
+      }
+    } catch (err) {
+      console.error('Error loading instructor details:', err);
+      setMessage('Failed to load instructor details');
+      setTimeout(() => setMessage(''), 3000);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const openCreateForm = () => {
@@ -233,6 +382,20 @@ const InstructorManager: React.FC = () => {
       }));
     } else {
       setFormData(prev => ({
+        ...prev,
+        specializations: prev.specializations.filter(s => s !== specialization)
+      }));
+    }
+  };
+
+  const handleEditSpecializationChange = (specialization: string, checked: boolean) => {
+    if (checked) {
+      setEditFormData(prev => ({
+        ...prev,
+        specializations: [...prev.specializations, specialization]
+      }));
+    } else {
+      setEditFormData(prev => ({
         ...prev,
         specializations: prev.specializations.filter(s => s !== specialization)
       }));
@@ -307,10 +470,7 @@ const InstructorManager: React.FC = () => {
 
               <div className="flex justify-end space-x-2">
                 <button
-                  onClick={() => {
-                    // TODO: Implement edit functionality
-                    alert('Edit functionality will be implemented in the next update');
-                  }}
+                  onClick={() => openEditForm(instructor)}
                   className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors duration-200"
                   title="Edit Instructor"
                 >
@@ -339,34 +499,120 @@ const InstructorManager: React.FC = () => {
         </div>
       )}
 
-      {/* Create Instructor Modal */}
+      {/* Create/Edit Instructor Modal */}
       {showCreateForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                Add New Instructor
+                {editingInstructor ? 'Edit Instructor' : 'Add New Instructor'}
               </h3>
 
-              {/* User Selection */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Select User *
-                </label>
-                <select
-                  value={formData.userId}
-                  onChange={(e) => setFormData(prev => ({ ...prev, userId: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                  required
-                >
-                  <option value="">Select a user...</option>
-                  {availableUsers.map((user) => (
-                    <option key={user.userId} value={user.userId}>
-                      {user.firstname} {user.lastname} ({user.email})
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {!editingInstructor && (
+                <>
+                  {/* User Selection - Only for creating new instructors */}
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Select User *
+                    </label>
+                    <select
+                      value={formData.userId}
+                      onChange={(e) => setFormData(prev => ({ ...prev, userId: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      required
+                    >
+                      <option value="">Select a user...</option>
+                      {availableUsers.map((user) => (
+                        <option key={user.userId} value={user.userId}>
+                          {user.firstname} {user.lastname} ({user.email})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </>
+              )}
+
+              {editingInstructor && (
+                <>
+                  {/* Edit User Information */}
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      First Name *
+                    </label>
+                    <input
+                      type="text"
+                      value={editFormData.firstname}
+                      onChange={(e) => setEditFormData(prev => ({ ...prev, firstname: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      required
+                    />
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Last Name *
+                    </label>
+                    <input
+                      type="text"
+                      value={editFormData.lastname}
+                      onChange={(e) => setEditFormData(prev => ({ ...prev, lastname: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      required
+                    />
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Email *
+                    </label>
+                    <input
+                      type="email"
+                      value={editFormData.email}
+                      onChange={(e) => setEditFormData(prev => ({ ...prev, email: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      required
+                    />
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Phone
+                    </label>
+                    <input
+                      type="tel"
+                      value={editFormData.phone}
+                      onChange={(e) => setEditFormData(prev => ({ ...prev, phone: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Address
+                    </label>
+                    <textarea
+                      value={editFormData.address}
+                      onChange={(e) => setEditFormData(prev => ({ ...prev, address: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      rows={2}
+                    />
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Status
+                    </label>
+                    <select
+                      value={editFormData.isActive ? 'active' : 'inactive'}
+                      onChange={(e) => setEditFormData(prev => ({ ...prev, isActive: e.target.value === 'active' }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    >
+                      <option value="active">Active</option>
+                      <option value="inactive">Inactive</option>
+                    </select>
+                  </div>
+                </>
+              )}
 
               {/* Hire Date */}
               <div className="mb-4">
@@ -375,8 +621,11 @@ const InstructorManager: React.FC = () => {
                 </label>
                 <input
                   type="date"
-                  value={formData.hireDate}
-                  onChange={(e) => setFormData(prev => ({ ...prev, hireDate: e.target.value }))}
+                  value={editingInstructor ? editFormData.hireDate : formData.hireDate}
+                  onChange={(e) => editingInstructor 
+                    ? setEditFormData(prev => ({ ...prev, hireDate: e.target.value }))
+                    : setFormData(prev => ({ ...prev, hireDate: e.target.value }))
+                  }
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                   required
                 />
@@ -392,8 +641,14 @@ const InstructorManager: React.FC = () => {
                     <label key={spec} className="flex items-center">
                       <input
                         type="checkbox"
-                        checked={formData.specializations.includes(spec)}
-                        onChange={(e) => handleSpecializationChange(spec, e.target.checked)}
+                        checked={editingInstructor 
+                          ? editFormData.specializations.includes(spec)
+                          : formData.specializations.includes(spec)
+                        }
+                        onChange={(e) => editingInstructor
+                          ? handleEditSpecializationChange(spec, e.target.checked)
+                          : handleSpecializationChange(spec, e.target.checked)
+                        }
                         className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
                       />
                       <span className="ml-2 text-sm">{spec}</span>
@@ -420,17 +675,22 @@ const InstructorManager: React.FC = () => {
                   onClick={() => {
                     setShowCreateForm(false);
                     setModalMessage('');
+                    setEditingInstructor(null);
+                    resetEditForm();
                   }}
                   className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors duration-200"
                 >
                   Cancel
                 </button>
                 <button
-                  onClick={handleCreateInstructor}
-                  disabled={isLoading || !formData.userId}
+                  onClick={editingInstructor ? handleEditInstructor : handleCreateInstructor}
+                  disabled={isLoading || (!editingInstructor && !formData.userId)}
                   className="flex-1 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200"
                 >
-                  {isLoading ? 'Creating...' : 'Create Instructor'}
+                  {isLoading 
+                    ? (editingInstructor ? 'Updating...' : 'Creating...') 
+                    : (editingInstructor ? 'Update Instructor' : 'Create Instructor')
+                  }
                 </button>
               </div>
             </div>
