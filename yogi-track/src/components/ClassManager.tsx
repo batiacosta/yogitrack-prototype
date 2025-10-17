@@ -19,11 +19,8 @@ interface ClassData {
 interface InstructorData {
   instructorId: string;
   userId: string;
-  userDetails?: {
-    firstname: string;
-    lastname: string;
-    email: string;
-  };
+  firstname: string;
+  lastname: string;
 }
 
 interface CreateClassData {
@@ -92,7 +89,7 @@ const ClassManager: React.FC<ClassManagerProps> = ({ userType }) => {
     const loadInstructors = async () => {
       try {
         const token = authService.getToken();
-        const response = await fetch(`${window.location.origin}/api/instructor/list`, {
+        const response = await fetch(`${window.location.origin}/api/instructor/getInstructorIds`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
@@ -410,7 +407,7 @@ const ClassManager: React.FC<ClassManagerProps> = ({ userType }) => {
                     <option value="">Select an instructor...</option>
                     {instructors.map((instructor) => (
                       <option key={instructor.instructorId} value={instructor.instructorId}>
-                        {instructor.userDetails?.firstname} {instructor.userDetails?.lastname} ({instructor.instructorId})
+                        {instructor.firstname} {instructor.lastname} ({instructor.instructorId})
                       </option>
                     ))}
                   </select>
