@@ -145,20 +145,35 @@ exports.add = async (req, res) => {
 //Populate the instructorId dropdown
 exports.getInstructorIds = async (req, res) => {
   try {
+    // Get all instructors
     const instructors = await Instructor.find({}, { instructorId: 1, userId: 1, _id: 0 })
-      .populate('userId', 'firstname lastname')
       .sort();
 
-    const instructorList = instructors.map(instructor => ({
-      instructorId: instructor.instructorId,
-      userId: instructor.userId._id,
-      firstname: instructor.userId.firstname,
-      lastname: instructor.userId.lastname
-    }));
+    // Handle case where no instructors exist
+    if (!instructors || instructors.length === 0) {
+      return res.json([]);
+    }
+
+    // Get user details for each instructor manually (since we use string IDs, not ObjectId refs)
+    const User = require("../models/userModel.cjs");
+    const instructorList = [];
+    
+    for (const instructor of instructors) {
+      const user = await User.findOne({ userId: instructor.userId });
+      if (user) {
+        instructorList.push({
+          instructorId: instructor.instructorId,
+          userId: instructor.userId,
+          firstname: user.firstname,
+          lastname: user.lastname
+        });
+      }
+    }
 
     res.json(instructorList);
   } catch (e) {
-    res.status(400).json({ error: e.message });
+    console.error('Error in getInstructorIds:', e);
+    res.status(500).json({ error: 'Failed to fetch instructors: ' + e.message });
   }
 };
 
