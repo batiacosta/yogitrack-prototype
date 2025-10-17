@@ -289,15 +289,24 @@ exports.updateInstructor = async (req, res) => {
             { instructorId },
             updateData,
             { new: true, runValidators: true }
-        ).populate('userId');
+        );
 
         if (!instructor) {
             return res.status(404).json({ message: 'Instructor not found' });
         }
 
+        // Get user details manually (since we use string IDs, not ObjectId refs)
+        const User = require("../models/userModel.cjs");
+        const user = await User.findOne({ userId: instructor.userId });
+        
+        const instructorWithUser = {
+            ...instructor.toObject(),
+            userId: user
+        };
+
         res.json({ 
             message: 'Instructor updated successfully by manager', 
-            instructor 
+            instructor: instructorWithUser 
         });
 
     } catch (err) {
