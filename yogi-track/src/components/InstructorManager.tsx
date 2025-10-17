@@ -282,7 +282,7 @@ const InstructorManager: React.FC = () => {
       {/* Instructors List */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {instructors.map((instructor) => (
-          <div key={instructor.instructorId} className="bg-white rounded-lg shadow-lg border border-gray-200">
+          <div key={instructor.instructorId} className="bg-white rounded-lg shadow-lg border border-gray-200 hover:shadow-xl transition-shadow duration-200">
             <div className="p-6">
               <div className="flex justify-between items-start mb-4">
                 <div>
@@ -300,18 +300,32 @@ const InstructorManager: React.FC = () => {
                 </div>
               </div>
 
-              <div className="space-y-2 text-sm">
+              <div className="space-y-2 text-sm mb-4">
                 <div><strong>User ID:</strong> {instructor.userId}</div>
                 <div><strong>Status:</strong> <span className="text-green-600">Active Instructor</span></div>
-                <div className="text-gray-500 italic">Full details available on request</div>
               </div>
 
-              <div className="mt-4 flex space-x-2">
+              <div className="flex justify-end space-x-2">
+                <button
+                  onClick={() => {
+                    // TODO: Implement edit functionality
+                    alert('Edit functionality will be implemented in the next update');
+                  }}
+                  className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors duration-200"
+                  title="Edit Instructor"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                </button>
                 <button
                   onClick={() => handleDeleteInstructor(instructor.instructorId)}
-                  className="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-3 rounded-lg transition-colors duration-200"
+                  className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors duration-200"
+                  title="Delete Instructor"
                 >
-                  Delete
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
                 </button>
               </div>
             </div>
