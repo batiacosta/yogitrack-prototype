@@ -80,12 +80,11 @@ exports.createManager = async (req, res) => {
         const fullManager = await Manager.findOne({ managerId });
         
         // Get user details manually
-        const User = require("../models/userModel.cjs");
-        const user = await User.findOne({ userId: fullManager.userId });
+        const userDetails = await User.findOne({ userId: fullManager.userId });
         
         const managerWithUser = {
             ...fullManager.toObject(),
-            userId: user
+            userId: userDetails
         };
 
         console.log(`Welcome to Yoga'Hom as a manager! Your manager id is ${managerId}.`);
@@ -115,9 +114,8 @@ exports.getManager = async (req, res) => {
             return res.status(404).json({ message: "Manager not found" });
         }
 
-        // Get user details manually
-        const User = require("../models/userModel.cjs");
-        const user = await User.findOne({ userId: manager.userId });
+                // Get user details manually
+        const user = await User.findOne({ userId: instructor.userId });
         
         if (!user) {
             return res.status(404).json({ message: "User details not found for manager" });

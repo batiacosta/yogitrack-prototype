@@ -11,6 +11,16 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess, onSignUpClick }) => {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showResetForm, setShowResetForm] = useState(false);
+  
+  // Reset password form state
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetPhone, setResetPhone] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetError, setResetError] = useState('');
+  const [resetSuccess, setResetSuccess] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,6 +35,80 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess, onSignUpClick }) => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetLoading(true);
+    setResetError('');
+    setResetSuccess('');
+
+    // Validate passwords match
+    if (newPassword !== confirmPassword) {
+      setResetError('Passwords do not match');
+      setResetLoading(false);
+      return;
+    }
+
+    // Validate password strength
+    if (newPassword.length < 6) {
+      setResetError('Password must be at least 6 characters long');
+      setResetLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(`${window.location.origin}/api/auth/reset-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: resetEmail,
+          phone: resetPhone,
+          newPassword: newPassword
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Password reset failed');
+      }
+
+      setResetSuccess('Password reset successfully! You can now login with your new password.');
+      
+      // Clear form and close modal after 3 seconds
+      setTimeout(() => {
+        setShowResetForm(false);
+        setResetEmail('');
+        setResetPhone('');
+        setNewPassword('');
+        setConfirmPassword('');
+        setResetSuccess('');
+      }, 3000);
+
+    } catch (err) {
+      setResetError(err instanceof Error ? err.message : 'Password reset failed');
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  const openResetForm = () => {
+    setShowResetForm(true);
+    setResetError('');
+    setResetSuccess('');
+  };
+
+  const closeResetForm = () => {
+    setShowResetForm(false);
+    setResetEmail('');
+    setResetPhone('');
+    setNewPassword('');
+    setConfirmPassword('');
+    setResetError('');
+    setResetSuccess('');
   };
 
   return (
@@ -105,9 +189,13 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess, onSignUpClick }) => {
               </div>
 
               <div className="text-sm">
-                <a href="#" className="font-medium text-emerald-400 hover:text-amber-500">
+                <button
+                  type="button"
+                  onClick={openResetForm}
+                  className="font-medium text-emerald-400 hover:text-amber-500 cursor-pointer"
+                >
                   Forgot your password?
-                </a>
+                </button>
               </div>
             </div>
 
@@ -172,6 +260,120 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess, onSignUpClick }) => {
           </div>
         </div>
       </div>
+
+      {/* Reset Password Modal */}
+      {showResetForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                Reset Password
+              </h3>
+              <p className="text-sm text-gray-600 mb-6">
+                Enter your email and phone number to verify your identity, then set a new password.
+              </p>
+
+              <form onSubmit={handleResetPassword}>
+                {/* Email */}
+                <div className="mb-4">
+                  <label htmlFor="reset-email" className="block text-sm font-medium text-gray-700 mb-1">
+                    Email Address *
+                  </label>
+                  <input
+                    id="reset-email"
+                    type="email"
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    required
+                    placeholder="your.email@example.com"
+                  />
+                </div>
+
+                {/* Phone */}
+                <div className="mb-4">
+                  <label htmlFor="reset-phone" className="block text-sm font-medium text-gray-700 mb-1">
+                    Phone Number *
+                  </label>
+                  <input
+                    id="reset-phone"
+                    type="tel"
+                    value={resetPhone}
+                    onChange={(e) => setResetPhone(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    required
+                    placeholder="(555) 123-4567"
+                  />
+                </div>
+
+                {/* New Password */}
+                <div className="mb-4">
+                  <label htmlFor="new-password" className="block text-sm font-medium text-gray-700 mb-1">
+                    New Password *
+                  </label>
+                  <input
+                    id="new-password"
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    required
+                    placeholder="At least 6 characters"
+                  />
+                </div>
+
+                {/* Confirm Password */}
+                <div className="mb-4">
+                  <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-700 mb-1">
+                    Confirm New Password *
+                  </label>
+                  <input
+                    id="confirm-password"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    required
+                    placeholder="Confirm your new password"
+                  />
+                </div>
+
+                {/* Error Message */}
+                {resetError && (
+                  <div className="mb-4 p-3 rounded-lg bg-red-100 text-red-700 border border-red-200">
+                    {resetError}
+                  </div>
+                )}
+
+                {/* Success Message */}
+                {resetSuccess && (
+                  <div className="mb-4 p-3 rounded-lg bg-green-100 text-green-700 border border-green-200">
+                    {resetSuccess}
+                  </div>
+                )}
+
+                {/* Buttons */}
+                <div className="flex space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={closeResetForm}
+                    className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors duration-200"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={resetLoading}
+                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200"
+                  >
+                    {resetLoading ? 'Resetting...' : 'Reset Password'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

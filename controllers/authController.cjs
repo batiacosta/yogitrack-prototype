@@ -328,6 +328,72 @@ exports.getProfile = async (req, res) => {
     }
 };
 
+// Reset password with email and phone verification
+exports.resetPassword = async (req, res) => {
+    try {
+        console.log('Password reset attempt:', { 
+            body: { ...req.body, password: '***', newPassword: '***' }
+        });
+        
+        const { email, phone, newPassword } = req.body;
+
+        // Validate input
+        if (!email || !phone || !newPassword) {
+            return res.status(400).json({ 
+                message: 'Email, phone number, and new password are required' 
+            });
+        }
+
+        // Validate password strength
+        if (newPassword.length < 6) {
+            return res.status(400).json({ 
+                message: 'New password must be at least 6 characters long' 
+            });
+        }
+
+        // Find user by email
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ 
+                message: 'No user found with this email address' 
+            });
+        }
+
+        // Verify phone number matches
+        if (user.phone !== phone) {
+            return res.status(401).json({ 
+                message: 'Phone number does not match our records' 
+            });
+        }
+
+        // Find existing password record
+        const passwordRecord = await Password.findOne({ userId: user.userId });
+        if (!passwordRecord) {
+            return res.status(404).json({ 
+                message: 'Password record not found' 
+            });
+        }
+
+        // Update password
+        passwordRecord.password = newPassword;
+        await passwordRecord.save();
+
+        console.log(`Password reset successful for user: ${user.email}`);
+
+        res.json({ 
+            message: 'Password reset successfully. You can now login with your new password.',
+            userId: user.userId
+        });
+
+    } catch (err) {
+        console.error('Error resetting password:', err);
+        res.status(500).json({ 
+            message: 'Server error', 
+            error: err.message 
+        });
+    }
+};
+
 // Logout (client-side token removal, but we can blacklist token if needed)
 exports.logout = (req, res) => {
     res.json({
