@@ -51,10 +51,11 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
 
   const handlePassPurchased = () => {
     setRefreshTrigger(prev => prev + 1);
-    setActiveTab('my-passes');
   };
 
-  const tabs = [
+  const handleClassScheduled = () => {
+    setRefreshTrigger(prev => prev + 1);
+  };  const tabs = [
     { id: 'overview', name: 'Overview', icon: '📊' },
     ...(user.userType === 'Manager' ? [
       { id: 'passes', name: 'Manage Passes', icon: '🎫' },
@@ -298,7 +299,10 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
           )}
 
           {activeTab === 'schedule' && user.userType === 'User' && (
-            <ClassScheduler onNeedPass={() => setActiveTab('passes')} />
+            <ClassScheduler 
+              onNeedPass={() => setActiveTab('passes')} 
+              onClassScheduled={handleClassScheduled}
+            />
           )}
         </div>
       </main>

@@ -21,9 +21,10 @@ interface ClassData {
 
 interface ClassSchedulerProps {
   onNeedPass: () => void; // Callback to redirect to pass purchase
+  onClassScheduled: () => void; // Callback to refresh pass data after scheduling
 }
 
-const ClassScheduler: React.FC<ClassSchedulerProps> = ({ onNeedPass }) => {
+const ClassScheduler: React.FC<ClassSchedulerProps> = ({ onNeedPass, onClassScheduled }) => {
   const [classes, setClasses] = useState<ClassData[]>([]);
   const [userPasses, setUserPasses] = useState<UserPassData[]>([]);
   const [selectedPass, setSelectedPass] = useState<string>('');
@@ -103,7 +104,8 @@ const ClassScheduler: React.FC<ClassSchedulerProps> = ({ onNeedPass }) => {
       setMessage(`✅ Successfully scheduled for ${selectedClass.className}!`);
       setShowScheduleModal(false);
       setSelectedClass(null);
-      loadData(); // Refresh data
+      loadData(); // Refresh local data
+      onClassScheduled(); // Trigger refresh of pass data in parent components
     } catch (err) {
       console.error('Schedule error:', err);
       setMessage(err instanceof Error ? err.message : 'Failed to schedule class');
