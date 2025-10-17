@@ -47,6 +47,7 @@ const ClassManager: React.FC<ClassManagerProps> = ({ userType }) => {
   const [editingClass, setEditingClass] = useState<ClassData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [modalMessage, setModalMessage] = useState('');
 
   const [formData, setFormData] = useState<CreateClassData>({
     className: '',
@@ -148,22 +149,35 @@ const ClassManager: React.FC<ClassManagerProps> = ({ userType }) => {
       }
 
       const result = await response.json();
-      setMessage(`✅ Class created successfully! Class ID: ${result.classId}`);
-      setShowCreateForm(false);
-      resetForm();
+      const successMessage = `✅ Class created successfully! Class ID: ${result.classId}`;
       
-      // Auto-clear success message and refresh
+      // Show success in modal briefly before closing
+      setModalMessage(successMessage);
+      setMessage(successMessage);
+      
+      // Close modal and refresh after showing success
       setTimeout(() => {
-        setMessage('');
+        setShowCreateForm(false);
+        setModalMessage('');
+        resetForm();
         window.location.reload(); // Refresh to update class list
       }, 2000);
     } catch (err) {
       console.error('Create class error:', err);
-      setMessage(err instanceof Error ? err.message : 'Failed to create class');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create class';
       
-      // Auto-clear message after 5 seconds for conflicts, 3 seconds for other errors
-      const clearTime = err instanceof Error && err.message.includes('⚠️') ? 5000 : 3000;
-      setTimeout(() => setMessage(''), clearTime);
+      // Show error in modal for immediate visibility
+      setModalMessage(errorMessage);
+      
+      // Also set the main message for consistency
+      setMessage(errorMessage);
+      
+      // Auto-clear messages after 5 seconds for conflicts, 3 seconds for other errors
+      const clearTime = errorMessage.includes('⚠️') ? 5000 : 3000;
+      setTimeout(() => {
+        setModalMessage('');
+        setMessage('');
+      }, clearTime);
     } finally {
       setIsLoading(false);
     }
@@ -243,6 +257,7 @@ const ClassManager: React.FC<ClassManagerProps> = ({ userType }) => {
   const openCreateForm = () => {
     resetForm();
     setEditingClass(null);
+    setModalMessage(''); // Clear any previous modal messages
     setShowCreateForm(true);
   };
 
@@ -537,11 +552,27 @@ const ClassManager: React.FC<ClassManagerProps> = ({ userType }) => {
                 )}
               </div>
 
+              {/* Modal Message Display */}
+              {modalMessage && (
+                <div className={`p-3 rounded-lg mb-4 ${
+                  modalMessage.includes('✅') 
+                    ? 'bg-green-100 text-green-700 border border-green-200'
+                    : modalMessage.includes('⚠️')
+                    ? 'bg-orange-100 text-orange-700 border border-orange-200'
+                    : 'bg-red-100 text-red-700 border border-red-200'
+                }`}>
+                  {modalMessage}
+                </div>
+              )}
+
               {/* Submit Buttons */}
               <div className="flex space-x-3 pt-4">
                 <button
                   type="button"
-                  onClick={() => setShowCreateForm(false)}
+                  onClick={() => {
+                    setShowCreateForm(false);
+                    setModalMessage(''); // Clear modal message when closing
+                  }}
                   className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors duration-200"
                 >
                   Cancel
