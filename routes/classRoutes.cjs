@@ -8,6 +8,8 @@ router.get("/list", classController.listClasses);
 
 // Protected routes (authentication required)
 router.post("/add", verifyToken, classController.addClass);
+router.put("/update/:classId", verifyToken, classController.updateClass);
+router.delete("/delete/:classId", verifyToken, classController.deleteClass);
 router.post("/register/:classId", verifyToken, classController.registerForClass);
 
 // Instructor-only routes

@@ -4,6 +4,7 @@ import PassList from './PassList';
 import UserPasses from './UserPasses';
 import CreatePassForm from './CreatePassForm';
 import AttendanceManager from './AttendanceManager';
+import ClassManager from './ClassManager';
 
 interface DashboardProps {
   user: User;
@@ -55,9 +56,11 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
   const tabs = [
     { id: 'overview', name: 'Overview', icon: '📊' },
     ...(user.userType === 'Manager' ? [
-      { id: 'passes', name: 'Manage Passes', icon: '🎫' }
+      { id: 'passes', name: 'Manage Passes', icon: '🎫' },
+      { id: 'classes', name: 'Manage Classes', icon: '🧘‍♀️' }
     ] : user.userType === 'Instructor' ? [
-      { id: 'attendance', name: 'Attendance', icon: '📋' }
+      { id: 'attendance', name: 'Attendance', icon: '📋' },
+      { id: 'classes', name: 'My Classes', icon: '🧘‍♀️' }
     ] : [
       { id: 'passes', name: 'Browse Passes', icon: '🎫' },
       { id: 'my-passes', name: 'My Passes', icon: '📋' }
@@ -277,6 +280,10 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
 
           {activeTab === 'attendance' && user.userType === 'Instructor' && (
             <AttendanceManager />
+          )}
+
+          {activeTab === 'classes' && (user.userType === 'Instructor' || user.userType === 'Manager') && (
+            <ClassManager userType={user.userType} />
           )}
         </div>
       </main>

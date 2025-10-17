@@ -41,20 +41,38 @@ async function generateClassId() {
 // Add Class
 exports.addClass = async (req, res) => {
   try {
-    const { className, instructorId, classType, description, daytime } = req.body;
+    let { className, instructorId, classType, description, daytime, capacity } = req.body;
+    
+    // If user is instructor, use their instructorId
+    if (req.user.role === 'Instructor') {
+      instructorId = req.user.instructorId;
+    }
+    
     if (!className || !instructorId || !classType || !Array.isArray(daytime) || daytime.length === 0) {
       return res.status(400).json({ message: 'All fields are required and at least one day/time.' });
     }
+
+    // Check for instructor scheduling conflicts
     for (const dt of daytime) {
-      const conflict = await Class.findOne({ 'daytime.day': dt.day, 'daytime.time': dt.time });
+      const conflict = await Class.findOne({ 
+        instructorId: instructorId,
+        'daytime.day': dt.day, 
+        'daytime.time': dt.time 
+      });
+      
       if (conflict) {
-        const hour = parseInt(dt.time.split(':')[0]);
-        const alternatives = [];
-        if (hour > 6) alternatives.push(`${hour - 1}:00`);
-        if (hour < 20) alternatives.push(`${hour + 1}:00`);
-        return res.status(409).json({ message: 'Schedule conflict found.', alternatives });
+        return res.status(409).json({ 
+          message: `Schedule conflict: Instructor ${instructorId} already has a class "${conflict.className}" on ${dt.day} at ${dt.time}`,
+          conflictingClass: {
+            classId: conflict.classId,
+            className: conflict.className,
+            day: dt.day,
+            time: dt.time
+          }
+        });
       }
     }
+
     // Generate new classId
     const classId = await generateClassId();
     const newClass = new Class({
@@ -63,9 +81,15 @@ exports.addClass = async (req, res) => {
       instructorId,
       classType,
       description,
-      daytime
+      daytime,
+      capacity: capacity || 20,
+      registeredUsers: [],
+      attendanceRecords: []
     });
+    
     await newClass.save();
+    
+    // Update JSON file
     let jsonData = [];
     if (fs.existsSync(classJsonPath)) {
       try {
@@ -78,9 +102,11 @@ exports.addClass = async (req, res) => {
       instructorId,
       classType,
       description,
-      daytime
+      daytime,
+      capacity: capacity || 20
     });
     fs.writeFileSync(classJsonPath, JSON.stringify(jsonData, null, 2));
+    
     console.log(`Class scheduled! Class id: ${classId}. Instructor: ${instructorId}`);
     res.status(201).json({ message: 'Class added successfully.', classId });
   } catch (err) {
@@ -275,6 +301,123 @@ exports.getAttendance = async (req, res) => {
       date,
       attendance: attendance || { attendees: [] }
     });
+
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
+// Update Class
+exports.updateClass = async (req, res) => {
+  try {
+    const { classId } = req.params;
+    const { className, instructorId, classType, description, daytime, capacity } = req.body;
+    
+    // Find the class to update
+    const classDoc = await Class.findOne({ classId });
+    if (!classDoc) {
+      return res.status(404).json({ message: 'Class not found' });
+    }
+
+    // Check if user has permission to update (instructor can only update their own classes)
+    if (req.user.role === 'Instructor' && classDoc.instructorId !== req.user.instructorId) {
+      return res.status(403).json({ message: 'You can only update your own classes' });
+    }
+
+    // Check for scheduling conflicts if daytime is being updated
+    if (daytime && Array.isArray(daytime)) {
+      for (const dt of daytime) {
+        // Look for conflicts excluding current class
+        const conflict = await Class.findOne({ 
+          classId: { $ne: classId },
+          instructorId: instructorId || classDoc.instructorId,
+          'daytime.day': dt.day, 
+          'daytime.time': dt.time 
+        });
+        
+        if (conflict) {
+          return res.status(409).json({ 
+            message: `Schedule conflict: Instructor already has a class on ${dt.day} at ${dt.time}`,
+            conflictingClass: {
+              classId: conflict.classId,
+              className: conflict.className
+            }
+          });
+        }
+      }
+    }
+
+    // Update class in database
+    const updateData = {};
+    if (className) updateData.className = className;
+    if (instructorId) updateData.instructorId = instructorId;
+    if (classType) updateData.classType = classType;
+    if (description) updateData.description = description;
+    if (daytime) updateData.daytime = daytime;
+    if (capacity) updateData.capacity = capacity;
+
+    await Class.updateOne({ classId }, updateData);
+
+    // Update JSON file
+    if (fs.existsSync(classJsonPath)) {
+      try {
+        let jsonData = JSON.parse(fs.readFileSync(classJsonPath, 'utf8'));
+        const classIndex = jsonData.findIndex(cls => cls.classId === classId);
+        if (classIndex !== -1) {
+          jsonData[classIndex] = { ...jsonData[classIndex], ...updateData };
+          fs.writeFileSync(classJsonPath, JSON.stringify(jsonData, null, 2));
+        }
+      } catch (e) {
+        console.error('Error updating JSON file:', e);
+      }
+    }
+
+    res.json({ message: 'Class updated successfully' });
+
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
+// Delete Class
+exports.deleteClass = async (req, res) => {
+  try {
+    const { classId } = req.params;
+    
+    // Find the class to delete
+    const classDoc = await Class.findOne({ classId });
+    if (!classDoc) {
+      return res.status(404).json({ message: 'Class not found' });
+    }
+
+    // Check if user has permission to delete (instructor can only delete their own classes)
+    if (req.user.role === 'Instructor' && classDoc.instructorId !== req.user.instructorId) {
+      return res.status(403).json({ message: 'You can only delete your own classes' });
+    }
+
+    // Check if class has registered users
+    if (classDoc.registeredUsers && classDoc.registeredUsers.length > 0) {
+      return res.status(400).json({ 
+        message: 'Cannot delete class with registered users. Please remove all registrations first.',
+        registeredCount: classDoc.registeredUsers.length
+      });
+    }
+
+    // Delete from database
+    await Class.deleteOne({ classId });
+
+    // Remove from JSON file
+    if (fs.existsSync(classJsonPath)) {
+      try {
+        let jsonData = JSON.parse(fs.readFileSync(classJsonPath, 'utf8'));
+        jsonData = jsonData.filter(cls => cls.classId !== classId);
+        fs.writeFileSync(classJsonPath, JSON.stringify(jsonData, null, 2));
+      } catch (e) {
+        console.error('Error updating JSON file:', e);
+      }
+    }
+
+    res.json({ message: 'Class deleted successfully' });
 
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });

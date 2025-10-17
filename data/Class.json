@@ -60,5 +60,24 @@
         "duration": 90
       }
     ]
+  },
+  {
+    "classId": "C00002",
+    "className": "Morning Hatha Yoga",
+    "instructorId": "I00001",
+    "classType": "Hatha",
+    "description": "Gentle morning yoga focusing on basic postures and breathing",
+    "daytime": [
+      {
+        "day": "Monday",
+        "time": "08:00",
+        "duration": 60
+      },
+      {
+        "day": "Wednesday",
+        "time": "08:00",
+        "duration": 60
+      }
+    ]
   }
 ]
