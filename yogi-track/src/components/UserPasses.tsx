@@ -112,12 +112,27 @@ const UserPasses: React.FC<UserPassesProps> = ({ showActiveOnly = false }) => {
     const loadData = async () => {
       try {
         setIsLoading(true);
+        setError('');
+        console.log('Loading user passes, showActiveOnly:', showActiveOnly);
+        
         const passes = showActiveOnly 
           ? await passService.getUserActivePasses()
           : await passService.getUserPasses();
-        setUserPasses(passes);
+        
+        console.log('Received passes data:', passes);
+        
+        // Ensure passes is an array
+        if (Array.isArray(passes)) {
+          setUserPasses(passes);
+        } else {
+          console.error('Passes data is not an array:', passes);
+          setUserPasses([]);
+          setError('Invalid data format received from server');
+        }
       } catch (err) {
+        console.error('Error loading passes:', err);
         setError(err instanceof Error ? err.message : 'Failed to load passes');
+        setUserPasses([]); // Ensure userPasses is always an array
       } finally {
         setIsLoading(false);
       }
@@ -129,12 +144,23 @@ const UserPasses: React.FC<UserPassesProps> = ({ showActiveOnly = false }) => {
   const loadUserPasses = async () => {
     try {
       setIsLoading(true);
+      setError('');
       const passes = showActiveOnly 
         ? await passService.getUserActivePasses()
         : await passService.getUserPasses();
-      setUserPasses(passes);
+      
+      // Ensure passes is an array
+      if (Array.isArray(passes)) {
+        setUserPasses(passes);
+      } else {
+        console.error('Passes data is not an array:', passes);
+        setUserPasses([]);
+        setError('Invalid data format received from server');
+      }
     } catch (err) {
+      console.error('Error loading passes:', err);
       setError(err instanceof Error ? err.message : 'Failed to load passes');
+      setUserPasses([]); // Ensure userPasses is always an array
     } finally {
       setIsLoading(false);
     }
@@ -198,12 +224,25 @@ const UserPasses: React.FC<UserPassesProps> = ({ showActiveOnly = false }) => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {userPasses.map((userPass) => (
-          <UserPassCard
-            key={userPass.userPassId}
-            userPass={userPass}
-          />
-        ))}
+        {Array.isArray(userPasses) && userPasses.length > 0 ? (
+          userPasses.map((userPass) => (
+            <UserPassCard
+              key={userPass.userPassId}
+              userPass={userPass}
+            />
+          ))
+        ) : (
+          !isLoading && (
+            <div className="col-span-full text-center py-12">
+              <p className="text-gray-600 text-lg">
+                {error ? 'Error loading passes' : 'No passes found'}
+              </p>
+              {error && (
+                <p className="text-red-600 text-sm mt-2">{error}</p>
+              )}
+            </div>
+          )
+        )}
       </div>
     </div>
   );

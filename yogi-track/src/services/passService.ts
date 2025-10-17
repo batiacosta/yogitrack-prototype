@@ -141,7 +141,9 @@ class PassService {
       throw new Error(errorData.message || 'Failed to fetch user passes');
     }
 
-    return response.json();
+    const data = await response.json();
+    // Handle both response formats: { userPasses: [...] } or [...]
+    return data.userPasses || data || [];
   }
 
   async getUserActivePasses(): Promise<UserPassData[]> {
@@ -154,7 +156,9 @@ class PassService {
       throw new Error(errorData.message || 'Failed to fetch active passes');
     }
 
-    return response.json();
+    const data = await response.json();
+    // Handle both response formats: { userPasses: [...] } or [...]
+    return data.userPasses || data || [];
   }
 
   async checkValidPass(): Promise<{ hasValidPass: boolean; activePasses: UserPassData[] }> {
