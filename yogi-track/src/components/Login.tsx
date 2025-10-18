@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { authService } from '../services/authService';
+import Logo from '../assets/Logo.png';
 
 interface LoginProps {
   onLoginSuccess: () => void;
@@ -115,12 +116,16 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess, onSignUpClick }) => {
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-orange-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-google-sans">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         {/* Logo */}
-        <div className="flex justify-center">
+        <div className="flex flex-col items-center mb-8">
           <img
-            className="h-16 w-auto"
-            src="/Logo.png"
-            alt="YogiTrack"
+            className="h-24 w-auto drop-shadow-lg hover:scale-105 transition-transform duration-200"
+            src={Logo}
+            alt="YogiTrack Logo"
           />
+          <div className="mt-3 text-center">
+            <h1 className="text-2xl font-bold text-yogi-black">YogiTrack</h1>
+            <p className="text-sm text-gray-600 mt-1">Yoga Studio Management System</p>
+          </div>
         </div>
         <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-yogi-black">
           Sign in to your account
